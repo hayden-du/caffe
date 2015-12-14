@@ -571,7 +571,7 @@ void SGDSolver<Dtype,Mtype>::ClipGradients() {
   const vector<Blob<Dtype>*>& net_params = this->net_->learnable_params();
   Mtype sumsq_diff(0);
   for (int i = 0; i < net_params.size(); ++i) {
-    sumsq_diff += net_params[i]->template sumsq_diff<Mtype>();
+    sumsq_diff += net_params[i]->sumsq_diff<Dtype,Mtype>();
   }
   const Mtype l2norm_diff(std::sqrt(sumsq_diff));
   if (l2norm_diff > clip_gradients) {

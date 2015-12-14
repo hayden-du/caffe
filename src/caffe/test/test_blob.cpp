@@ -135,8 +135,8 @@ TYPED_TEST(BlobMathTest, TestSumOfSquares) {
   typedef typename TypeParam::Mtype Mtype;
 
   // Uninitialized Blob should have sum of squares == 0.
-  EXPECT_EQ(0, this->blob_->template sumsq_data<Mtype>());
-  EXPECT_EQ(0, this->blob_->template sumsq_diff<Mtype>());
+  EXPECT_EQ(0, this->blob_->sumsq_data<Dtype,Mtype>());
+  EXPECT_EQ(0, this->blob_->sumsq_diff<Dtype,Mtype>());
   FillerParameter filler_param;
   filler_param.set_min(-3);
   filler_param.set_max(3);
@@ -166,9 +166,9 @@ TYPED_TEST(BlobMathTest, TestSumOfSquares) {
   default:
     LOG(FATAL) << "Unknown device: " << TypeParam::device;
   }
-  EXPECT_NEAR(expected_sumsq, this->blob_->template sumsq_data<Mtype>(),
+  EXPECT_NEAR(expected_sumsq, this->blob_->sumsq_data<Dtype,Mtype>(),
               this->epsilon_ * expected_sumsq);
-  EXPECT_EQ(0, this->blob_->template sumsq_diff<Mtype>());
+  EXPECT_EQ(0, this->blob_->sumsq_diff<Dtype,Mtype>());
 
   // Check sumsq_diff too.
   const Mtype kDiffScaleFactor = 7;
@@ -184,11 +184,11 @@ TYPED_TEST(BlobMathTest, TestSumOfSquares) {
   default:
     LOG(FATAL) << "Unknown device: " << TypeParam::device;
   }
-  EXPECT_NEAR(expected_sumsq, this->blob_->template sumsq_data<Mtype>(),
+  EXPECT_NEAR(expected_sumsq, this->blob_->sumsq_data<Dtype,Mtype>(),
               this->epsilon_ * expected_sumsq);
   const Mtype expected_sumsq_diff =
       expected_sumsq * kDiffScaleFactor * kDiffScaleFactor;
-  EXPECT_NEAR(expected_sumsq_diff, this->blob_->template sumsq_diff<Mtype>(),
+  EXPECT_NEAR(expected_sumsq_diff, this->blob_->sumsq_diff<Dtype,Mtype>(),
               tol<Dtype>(this->epsilon_) * expected_sumsq_diff);
 }
 
@@ -197,8 +197,8 @@ TYPED_TEST(BlobMathTest, TestAsum) {
   typedef typename TypeParam::Mtype Mtype;
 
   // Uninitialized Blob should have asum == 0.
-  EXPECT_EQ(0, this->blob_->template asum_data<Mtype>());
-  EXPECT_EQ(0, this->blob_->template asum_diff<Mtype>());
+  EXPECT_EQ(0, this->blob_->asum_data<Dtype,Mtype>());
+  EXPECT_EQ(0, this->blob_->asum_diff<Dtype,Mtype>());
   FillerParameter filler_param;
   filler_param.set_min(-3);
   filler_param.set_max(3);
@@ -228,9 +228,9 @@ TYPED_TEST(BlobMathTest, TestAsum) {
   default:
     LOG(FATAL) << "Unknown device: " << TypeParam::device;
   }
-  EXPECT_NEAR(expected_asum, this->blob_->template asum_data<Mtype>(),
+  EXPECT_NEAR(expected_asum, this->blob_->asum_data<Dtype,Mtype>(),
               this->epsilon_ * expected_asum);
-  EXPECT_EQ(0, this->blob_->template asum_diff<Mtype>());
+  EXPECT_EQ(0, this->blob_->asum_diff<Dtype,Mtype>());
 
   // Check asum_diff too.
   const Mtype kDiffScaleFactor = 7;
@@ -246,10 +246,10 @@ TYPED_TEST(BlobMathTest, TestAsum) {
   default:
     LOG(FATAL) << "Unknown device: " << TypeParam::device;
   }
-  EXPECT_NEAR(expected_asum, this->blob_->template asum_data<Mtype>(),
+  EXPECT_NEAR(expected_asum, this->blob_->asum_data<Dtype,Mtype>(),
               this->epsilon_ * expected_asum);
   const Mtype expected_diff_asum = expected_asum * kDiffScaleFactor;
-  EXPECT_NEAR(expected_diff_asum, this->blob_->template asum_diff<Mtype>(),
+  EXPECT_NEAR(expected_diff_asum, this->blob_->asum_diff<Dtype,Mtype>(),
       tol<Dtype>(this->epsilon_) * expected_diff_asum);
 }
 
@@ -257,14 +257,14 @@ TYPED_TEST(BlobMathTest, TestScaleData) {
   typedef typename TypeParam::Dtype Dtype;
   typedef typename TypeParam::Mtype Mtype;
 
-  EXPECT_EQ(0, this->blob_->template asum_data<Mtype>());
-  EXPECT_EQ(0, this->blob_->template asum_diff<Mtype>());
+  EXPECT_EQ(0, this->blob_->asum_data<Dtype,Mtype>());
+  EXPECT_EQ(0, this->blob_->asum_diff<Dtype,Mtype>());
   FillerParameter filler_param;
   filler_param.set_min(-3);
   filler_param.set_max(3);
   UniformFiller<Dtype,Mtype> filler(filler_param);
   filler.Fill(this->blob_);
-  const Mtype asum_before_scale = this->blob_->template asum_data<Mtype>();
+  const Mtype asum_before_scale = this->blob_->asum_data<Dtype,Mtype>();
   // Do a mutable access on the current device,
   // so that the asum computation is done on that device.
   // (Otherwise, this would only check the CPU asum implementation.)
@@ -280,9 +280,9 @@ TYPED_TEST(BlobMathTest, TestScaleData) {
   }
   const Mtype kDataScaleFactor = 3;
   this->blob_->scale_data(kDataScaleFactor);
-  EXPECT_NEAR(asum_before_scale * kDataScaleFactor, this->blob_->template asum_data<Mtype>(),
+  EXPECT_NEAR(asum_before_scale * kDataScaleFactor, this->blob_->asum_data<Dtype,Mtype>(),
               tol<Dtype>(this->epsilon_) * asum_before_scale * kDataScaleFactor);
-  EXPECT_NEAR(0, this->blob_->template asum_diff<Mtype>(), choose<Dtype>(1.e-6,1.e-4));
+  EXPECT_NEAR(0, this->blob_->asum_diff<Dtype,Mtype>(), choose<Dtype>(1.e-6,1.e-4));
 
   // Check scale_diff too.
   const Mtype kDataToDiffScaleFactor = 7;
@@ -290,11 +290,11 @@ TYPED_TEST(BlobMathTest, TestScaleData) {
   caffe_cpu_scale<Dtype,Mtype>(this->blob_->count(), kDataToDiffScaleFactor, data,
                   this->blob_->mutable_cpu_diff());
   const Mtype expected_asum_before_scale = asum_before_scale * kDataScaleFactor;
-  EXPECT_NEAR(expected_asum_before_scale, this->blob_->template asum_data<Mtype>(),
+  EXPECT_NEAR(expected_asum_before_scale, this->blob_->asum_data<Dtype,Mtype>(),
       tol<Dtype>(this->epsilon_) * expected_asum_before_scale);
   const Mtype expected_diff_asum_before_scale =
       asum_before_scale * kDataScaleFactor * kDataToDiffScaleFactor;
-  EXPECT_NEAR(expected_diff_asum_before_scale, this->blob_->template asum_diff<Mtype>(),
+  EXPECT_NEAR(expected_diff_asum_before_scale, this->blob_->asum_diff<Dtype,Mtype>(),
       tol<Dtype>(this->epsilon_) * expected_diff_asum_before_scale);
   switch (TypeParam::device) {
   case Caffe::CPU:
@@ -308,11 +308,11 @@ TYPED_TEST(BlobMathTest, TestScaleData) {
   }
   const Mtype kDiffScaleFactor = 3;
   this->blob_->scale_diff(kDiffScaleFactor);
-  EXPECT_NEAR(asum_before_scale * kDataScaleFactor, this->blob_->template asum_data<Mtype>(),
+  EXPECT_NEAR(asum_before_scale * kDataScaleFactor, this->blob_->asum_data<Dtype,Mtype>(),
       tol<Dtype>(this->epsilon_) * asum_before_scale * kDataScaleFactor);
   const Mtype expected_diff_asum =
       expected_diff_asum_before_scale * kDiffScaleFactor;
-  EXPECT_NEAR(expected_diff_asum, this->blob_->template asum_diff<Mtype>(),
+  EXPECT_NEAR(expected_diff_asum, this->blob_->asum_diff<Dtype,Mtype>(),
       tol<Dtype>(this->epsilon_) * expected_diff_asum);
 }
 

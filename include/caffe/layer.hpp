@@ -43,6 +43,41 @@ public:
   }
 
   /**
+   * @brief Implements common layer setup functionality.
+   *
+   * @param bottom the preshaped input blobs
+   * @param top
+   *     the allocated but unshaped output blobs, to be shaped by Reshape
+   *
+   * Checks that the number of bottom and top blobs is correct.
+   * Calls LayerSetUp to do special layer setup for individual layer types,
+   * followed by Reshape to set up sizes of top blobs and internal buffers.
+   * Sets up the loss weight multiplier blobs for any non-zero loss weights.
+   * This method may not be overridden.
+   */
+  void SetUp(const vector<BlobBase*>& bottom, const vector<BlobBase*>& top) {
+    CheckBlobCounts(bottom, top);
+    LayerSetUp(bottom, top);
+    Reshape(bottom, top);
+    SetLossWeights(top);
+  }
+
+  /**
+   * @brief Adjust the shapes of top blobs and internal buffers to accommodate
+   *        the shapes of the bottom blobs.
+   *
+   * @param bottom the input blobs, with the requested input shapes
+   * @param top the top blobs, which should be reshaped as needed
+   *
+   * This method should reshape top blobs as needed according to the shapes
+   * of the bottom (input) blobs, as well as reshaping any internal buffers
+   * and making any other necessary adjustments so that the layer can
+   * accommodate the bottom blobs.
+   */
+  virtual void Reshape(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top) = 0;
+
+  /**
    * @brief Whether a layer should be shared by multiple nets during data
    *        parallelism. By default, all layers except for data layers should
    *        not be shared. data layers should be shared to ensure each worker
@@ -77,6 +112,26 @@ public:
    * @brief Returns the layer type.
    */
   virtual inline const char* type() const { return ""; }
+
+
+  /**
+   * @brief Does layer-specific setup: your layer should implement this function
+   *        as well as Reshape.
+   *
+   * @param bottom
+   *     the preshaped input blobs, whose data fields store the input data for
+   *     this layer
+   * @param top
+   *     the allocated but unshaped output blobs
+   *
+   * This method should do one-time layer specific setup. This includes reading
+   * and processing relevent parameters from the <code>layer_param_</code>.
+   * Setting up the shapes of top blobs and internal buffers should be done in
+   * <code>Reshape</code>, which will be called before the forward pass to
+   * adjust the top blob sizes.
+   */
+  virtual void LayerSetUp(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top) {}
 
   /**
    * @brief Returns the exact number of bottom blobs required by the layer,
@@ -193,6 +248,56 @@ public:
   /** Unlock forward_mutex_ if this layer is shared */
   void Unlock();
 
+  /**
+   * Called by the parent Layer's SetUp to check that the number of bottom
+   * and top Blobs provided as input match the expected numbers specified by
+   * the {ExactNum,Min,Max}{Bottom,Top}Blobs() functions.
+   */
+  virtual void CheckBlobCounts(const vector<BlobBase*>& bottom,
+                               const vector<BlobBase*>& top) {
+    if (ExactNumBottomBlobs() >= 0) {
+      CHECK_EQ(ExactNumBottomBlobs(), bottom.size())
+          << type() << " Layer takes " << ExactNumBottomBlobs()
+          << " bottom blob(s) as input.";
+    }
+    if (MinBottomBlobs() >= 0) {
+      CHECK_LE(MinBottomBlobs(), bottom.size())
+          << type() << " Layer takes at least " << MinBottomBlobs()
+          << " bottom blob(s) as input.";
+    }
+    if (MaxBottomBlobs() >= 0) {
+      CHECK_GE(MaxBottomBlobs(), bottom.size())
+          << type() << " Layer takes at most " << MaxBottomBlobs()
+          << " bottom blob(s) as input.";
+    }
+    if (ExactNumTopBlobs() >= 0) {
+      CHECK_EQ(ExactNumTopBlobs(), top.size())
+          << type() << " Layer produces " << ExactNumTopBlobs()
+          << " top blob(s) as output.";
+    }
+    if (MinTopBlobs() >= 0) {
+      CHECK_LE(MinTopBlobs(), top.size())
+          << type() << " Layer produces at least " << MinTopBlobs()
+          << " top blob(s) as output.";
+    }
+    if (MaxTopBlobs() >= 0) {
+      CHECK_GE(MaxTopBlobs(), top.size())
+          << type() << " Layer produces at most " << MaxTopBlobs()
+          << " top blob(s) as output.";
+    }
+    if (EqualNumBottomTopBlobs()) {
+      CHECK_EQ(bottom.size(), top.size())
+          << type() << " Layer produces one top blob as output for each "
+          << "bottom blob input.";
+    }
+  }
+
+  /**
+   * Called by SetUp to initialize the weights associated with any top blobs in
+   * the loss function. Store non-zero loss weights in the diff blob.
+   */
+  virtual void SetLossWeights(const vector<BlobBase*>& top) = 0;
+
  private:
   /** Whether this layer is actually shared by other nets*/
   bool is_shared_;
@@ -222,62 +327,6 @@ class Layer: public LayerBase {
         }
       }
   }
-
-  /**
-   * @brief Implements common layer setup functionality.
-   *
-   * @param bottom the preshaped input blobs
-   * @param top
-   *     the allocated but unshaped output blobs, to be shaped by Reshape
-   *
-   * Checks that the number of bottom and top blobs is correct.
-   * Calls LayerSetUp to do special layer setup for individual layer types,
-   * followed by Reshape to set up sizes of top blobs and internal buffers.
-   * Sets up the loss weight multiplier blobs for any non-zero loss weights.
-   * This method may not be overridden.
-   */
-  void SetUp(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
-    CheckBlobCounts(bottom, top);
-    LayerSetUp(bottom, top);
-    Reshape(bottom, top);
-    SetLossWeights(top);
-  }
-
-  /**
-   * @brief Does layer-specific setup: your layer should implement this function
-   *        as well as Reshape.
-   *
-   * @param bottom
-   *     the preshaped input blobs, whose data fields store the input data for
-   *     this layer
-   * @param top
-   *     the allocated but unshaped output blobs
-   *
-   * This method should do one-time layer specific setup. This includes reading
-   * and processing relevent parameters from the <code>layer_param_</code>.
-   * Setting up the shapes of top blobs and internal buffers should be done in
-   * <code>Reshape</code>, which will be called before the forward pass to
-   * adjust the top blob sizes.
-   */
-  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {}
-
-
-  /**
-   * @brief Adjust the shapes of top blobs and internal buffers to accommodate
-   *        the shapes of the bottom blobs.
-   *
-   * @param bottom the input blobs, with the requested input shapes
-   * @param top the top blobs, which should be reshaped as needed
-   *
-   * This method should reshape top blobs as needed according to the shapes
-   * of the bottom (input) blobs, as well as reshaping any internal buffers
-   * and making any other necessary adjustments so that the layer can
-   * accommodate the bottom blobs.
-   */
-  virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) = 0;
 
   /**
    * @brief Given the bottom blobs, compute the top blobs and the loss.
@@ -394,64 +443,20 @@ class Layer: public LayerBase {
   }
 
   /**
-   * Called by the parent Layer's SetUp to check that the number of bottom
-   * and top Blobs provided as input match the expected numbers specified by
-   * the {ExactNum,Min,Max}{Bottom,Top}Blobs() functions.
-   */
-  virtual void CheckBlobCounts(const vector<Blob<Dtype>*>& bottom,
-                               const vector<Blob<Dtype>*>& top) {
-    if (ExactNumBottomBlobs() >= 0) {
-      CHECK_EQ(ExactNumBottomBlobs(), bottom.size())
-          << type() << " Layer takes " << ExactNumBottomBlobs()
-          << " bottom blob(s) as input.";
-    }
-    if (MinBottomBlobs() >= 0) {
-      CHECK_LE(MinBottomBlobs(), bottom.size())
-          << type() << " Layer takes at least " << MinBottomBlobs()
-          << " bottom blob(s) as input.";
-    }
-    if (MaxBottomBlobs() >= 0) {
-      CHECK_GE(MaxBottomBlobs(), bottom.size())
-          << type() << " Layer takes at most " << MaxBottomBlobs()
-          << " bottom blob(s) as input.";
-    }
-    if (ExactNumTopBlobs() >= 0) {
-      CHECK_EQ(ExactNumTopBlobs(), top.size())
-          << type() << " Layer produces " << ExactNumTopBlobs()
-          << " top blob(s) as output.";
-    }
-    if (MinTopBlobs() >= 0) {
-      CHECK_LE(MinTopBlobs(), top.size())
-          << type() << " Layer produces at least " << MinTopBlobs()
-          << " top blob(s) as output.";
-    }
-    if (MaxTopBlobs() >= 0) {
-      CHECK_GE(MaxTopBlobs(), top.size())
-          << type() << " Layer produces at most " << MaxTopBlobs()
-          << " top blob(s) as output.";
-    }
-    if (EqualNumBottomTopBlobs()) {
-      CHECK_EQ(bottom.size(), top.size())
-          << type() << " Layer produces one top blob as output for each "
-          << "bottom blob input.";
-    }
-  }
-
-  /**
    * Called by SetUp to initialize the weights associated with any top blobs in
    * the loss function. Store non-zero loss weights in the diff blob.
    */
-  inline void SetLossWeights(const vector<Blob<Dtype>*>& top) {
+  virtual void SetLossWeights(const vector<BlobBase*>& top) {
     const int num_loss_weights = layer_param_.loss_weight_size();
     if (num_loss_weights) {
       CHECK_EQ(top.size(), num_loss_weights) << "loss_weight must be "
           "unspecified or specified once per top blob.";
       for (int top_id = 0; top_id < top.size(); ++top_id) {
         const Dtype loss_weight = layer_param_.loss_weight(top_id);
-        if (loss_weight == 0.) { continue; }
+        if (loss_weight == 0.F) { continue; }
         this->set_loss(top_id, loss_weight);
         const int count = top[top_id]->count();
-        Dtype* loss_multiplier = top[top_id]->mutable_cpu_diff();
+        Dtype* loss_multiplier = (Dtype*)top[top_id]->diff()->mutable_cpu_data();
         caffe_set(count, loss_weight, loss_multiplier);
       }
     }

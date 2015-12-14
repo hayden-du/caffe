@@ -21,16 +21,18 @@ namespace caffe {
  *
  * TODO(dox): more thorough description.
  */
-template <typename Dtype>
-class Blob {
+class BlobBase {
  public:
-  Blob()
+  BlobBase()
        : data_(), diff_(), count_(0), capacity_(0) {}
 
   /// @brief Deprecated; use <code>Blob(const vector<int>& shape)</code>.
-  explicit Blob(const int num, const int channels, const int height,
+  BlobBase(const int num, const int channels, const int height,
       const int width);
-  explicit Blob(const vector<int>& shape);
+  explicit BlobBase(const vector<int>& shape);
+
+  virtual ~BlobBase() {}
+  virtual std::size_t dtsize() const = 0;
 
   /// @brief Deprecated; use <code>Reshape(const vector<int>& shape)</code>.
   void Reshape(const int num, const int channels, const int height,
@@ -51,7 +53,7 @@ class Blob {
    */
   void Reshape(const vector<int>& shape);
   void Reshape(const BlobShape& shape);
-  void ReshapeLike(const Blob& other);
+  void ReshapeLike(const BlobBase& other);
   inline string shape_string() const {
     ostringstream stream;
     for (int i = 0; i < shape_.size(); ++i) {
@@ -74,7 +76,6 @@ class Blob {
   }
   inline int num_axes() const { return shape_.size(); }
   inline int count() const { return count_; }
-  inline int dtsize() const { return sizeof(Dtype); }
 
   /**
    * @brief Compute the volume of a slice; i.e., the product of dimensions
@@ -178,6 +179,96 @@ class Blob {
     }
     return offset;
   }
+
+  inline const shared_ptr<SyncedMemory>& data() const {
+    CHECK(data_);
+    return data_;
+  }
+
+  inline const shared_ptr<SyncedMemory>& diff() const {
+    CHECK(diff_);
+    return diff_;
+  }
+
+  const int* gpu_shape() const;
+  template <typename Dtype, typename Mtype>
+  void Update();
+
+  /// @brief Compute the sum of absolute values (L1 norm) of the data.
+  template <typename Dtype, typename Mtype>
+  Mtype asum_data() const;
+  /// @brief Compute the sum of absolute values (L1 norm) of the diff.
+  template <typename Dtype, typename Mtype>
+  Mtype asum_diff() const;
+  /// @brief Compute the sum of squares (L2 norm squared) of the data.
+  template <typename Dtype, typename Mtype>
+  Mtype sumsq_data() const;
+  /// @brief Compute the sum of squares (L2 norm squared) of the diff.
+  template <typename Dtype, typename Mtype>
+  Mtype sumsq_diff() const;
+
+  /// @brief Scale the blob data by a constant factor.
+  template <typename Dtype, typename Mtype>
+  void scale_data(Mtype scale_factor);
+  /// @brief Scale the blob diff by a constant factor.
+  template <typename Dtype, typename Mtype>
+  void scale_diff(Mtype scale_factor);
+
+  /**
+   * @brief Set the data_ shared_ptr to point to the SyncedMemory holding the
+   *        data_ of Blob other -- useful in Layer%s which simply perform a copy
+   *        in their Forward pass.
+   *
+   * This deallocates the SyncedMemory holding this Blob's data_, as
+   * shared_ptr calls its destructor when reset with the "=" operator.
+   */
+  void ShareData(const BlobBase& other);
+  /**
+   * @brief Set the diff_ shared_ptr to point to the SyncedMemory holding the
+   *        diff_ of Blob other -- useful in Layer%s which simply perform a copy
+   *        in their Forward pass.
+   *
+   * This deallocates the SyncedMemory holding this Blob's diff_, as
+   * shared_ptr calls its destructor when reset with the "=" operator.
+   */
+  void ShareDiff(const BlobBase& other);
+
+  bool ShapeEquals(const BlobProto& other);
+
+ protected:
+  shared_ptr<SyncedMemory> data_;
+  shared_ptr<SyncedMemory> diff_;
+  shared_ptr<SyncedMemory> shape_data_;
+  vector<int> shape_;
+  int count_;
+  int capacity_;
+
+  DISABLE_COPY_AND_ASSIGN(BlobBase);
+};  // class Blob
+
+
+template <typename Dtype>
+class Blob : public BlobBase {
+public:
+  Blob()
+    : BlobBase() {}
+  Blob(const int num, const int channels, const int height, const int width)
+    : BlobBase(num, channels, height, width) {}
+  explicit Blob(const vector<int>& shape)
+    : BlobBase(shape) {}
+
+  const Dtype* cpu_data() const;
+  void set_cpu_data(Dtype* data);
+  const Dtype* gpu_data() const;
+  const Dtype* cpu_diff() const;
+  const Dtype* gpu_diff() const;
+  Dtype* mutable_cpu_data();
+  Dtype* mutable_gpu_data();
+  Dtype* mutable_cpu_diff();
+  Dtype* mutable_gpu_diff();
+
+  virtual std::size_t dtsize() const { return sizeof(Dtype); }
+
   /**
    * @brief Copy from a source Blob.
    *
@@ -208,82 +299,11 @@ class Blob {
     return cpu_diff()[offset(index)];
   }
 
-  inline const shared_ptr<SyncedMemory>& data() const {
-    CHECK(data_);
-    return data_;
-  }
-
-  inline const shared_ptr<SyncedMemory>& diff() const {
-    CHECK(diff_);
-    return diff_;
-  }
-
-  const Dtype* cpu_data() const;
-  void set_cpu_data(Dtype* data);
-  const int* gpu_shape() const;
-  const Dtype* gpu_data() const;
-  const Dtype* cpu_diff() const;
-  const Dtype* gpu_diff() const;
-  Dtype* mutable_cpu_data();
-  Dtype* mutable_gpu_data();
-  Dtype* mutable_cpu_diff();
-  Dtype* mutable_gpu_diff();
-  template <typename Mtype>
-  void Update();
   void FromProto(const BlobProto& proto, bool reshape = true);
   void ToProto(BlobProto* proto, bool write_diff = false) const;
 
-  /// @brief Compute the sum of absolute values (L1 norm) of the data.
-  template <typename Mtype>
-  Mtype asum_data() const;
-  /// @brief Compute the sum of absolute values (L1 norm) of the diff.
-  template <typename Mtype>
-  Mtype asum_diff() const;
-  /// @brief Compute the sum of squares (L2 norm squared) of the data.
-  template <typename Mtype>
-  Mtype sumsq_data() const;
-  /// @brief Compute the sum of squares (L2 norm squared) of the diff.
-  template <typename Mtype>
-  Mtype sumsq_diff() const;
-
-  /// @brief Scale the blob data by a constant factor.
-  template <typename Mtype>
-  void scale_data(Mtype scale_factor);
-  /// @brief Scale the blob diff by a constant factor.
-  template <typename Mtype>
-  void scale_diff(Mtype scale_factor);
-
-  /**
-   * @brief Set the data_ shared_ptr to point to the SyncedMemory holding the
-   *        data_ of Blob other -- useful in Layer%s which simply perform a copy
-   *        in their Forward pass.
-   *
-   * This deallocates the SyncedMemory holding this Blob's data_, as
-   * shared_ptr calls its destructor when reset with the "=" operator.
-   */
-  void ShareData(const Blob& other);
-  /**
-   * @brief Set the diff_ shared_ptr to point to the SyncedMemory holding the
-   *        diff_ of Blob other -- useful in Layer%s which simply perform a copy
-   *        in their Forward pass.
-   *
-   * This deallocates the SyncedMemory holding this Blob's diff_, as
-   * shared_ptr calls its destructor when reset with the "=" operator.
-   */
-  void ShareDiff(const Blob& other);
-
-  bool ShapeEquals(const BlobProto& other);
-
- protected:
-  shared_ptr<SyncedMemory> data_;
-  shared_ptr<SyncedMemory> diff_;
-  shared_ptr<SyncedMemory> shape_data_;
-  vector<int> shape_;
-  int count_;
-  int capacity_;
-
   DISABLE_COPY_AND_ASSIGN(Blob);
-};  // class Blob
+};
 
 }  // namespace caffe
 

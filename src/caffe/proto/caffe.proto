@@ -310,6 +310,18 @@ message LayerParameter {
   repeated string bottom = 3; // the name of each bottom blob
   repeated string top = 4; // the name of each top blob
 
+  // Precision in bits for math and data
+  //
+  // 64 for double
+  // 32 for float (default)
+  // 16 for FP16 (aka "half")
+  // 8  (reserved for the future use)
+  //
+  // Data storage precision (aka "Dtype")
+  optional int32 data_precision = 12 [default = 32];
+  // Compute precision (aka "Mtype") used by a layer internally
+  optional int32 math_precision = 13 [default = 32];
+
   // The train / test phase for computation.
   optional Phase phase = 10;
 

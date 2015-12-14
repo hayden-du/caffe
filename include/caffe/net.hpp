@@ -242,23 +242,23 @@ class Net {
   /// @brief The phase: TRAIN or TEST
   Phase phase_;
   /// @brief Individual layers in the net
-  vector<shared_ptr<Layer<Dtype,Mtype> > > layers_;
+  vector<shared_ptr<LayerBase> > layers_;
   vector<string> layer_names_;
   map<string, int> layer_names_index_;
   vector<bool> layer_need_backward_;
   /// @brief the blobs storing intermediate results between the layer.
-  vector<shared_ptr<Blob<Dtype> > > blobs_;
+  vector<shared_ptr<BlobBase> > blobs_;
   vector<string> blob_names_;
   map<string, int> blob_names_index_;
   vector<bool> blob_need_backward_;
   /// bottom_vecs stores the vectors containing the input for each layer.
   /// They don't actually host the blobs (blobs_ does), so we simply store
   /// pointers.
-  vector<vector<Blob<Dtype>*> > bottom_vecs_;
+  vector<vector<BlobBase*> > bottom_vecs_;
   vector<vector<int> > bottom_id_vecs_;
   vector<vector<bool> > bottom_need_backward_;
   /// top_vecs stores the vectors containing the output for each layer
-  vector<vector<Blob<Dtype>*> > top_vecs_;
+  vector<vector<BlobBase*> > top_vecs_;
   vector<vector<int> > top_id_vecs_;
   /// Vector of weight in the loss (or objective) function of each net blob,
   /// indexed by blob_id.
