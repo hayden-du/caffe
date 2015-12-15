@@ -31,20 +31,20 @@ class BaseDataLayer : public Layer<Dtype,Mtype> {
   // LayerSetUp: implements common data layer setup functionality, and calls
   // DataLayerSetUp to do special data layer setup for individual layer types.
   // This method may not be overridden except by the BasePrefetchingDataLayer.
-  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
+  virtual void LayerSetUp(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top);
   // Data layers should be shared by multiple solvers in parallel
   virtual inline bool ShareInParallel() const { return true; }
   virtual void DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {}
   // Data layers have no bottoms, so reshaping is trivial.
-  virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {}
+  virtual void Reshape(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top);
 
-  virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {}
-  virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {}
+  virtual void Backward_cpu(const vector<BlobBase*>& top,
+      const vector<bool>& propagate_down, const vector<BlobBase*>& bottom) {}
+  virtual void Backward_gpu(const vector<BlobBase*>& top,
+      const vector<bool>& propagate_down, const vector<BlobBase*>& bottom) {}
 
  protected:
   TransformationParameter transform_param_;
@@ -66,13 +66,13 @@ class BasePrefetchingDataLayer :
   // LayerSetUp: implements common data layer setup functionality, and calls
   // DataLayerSetUp to do special data layer setup for individual layer types.
   // This method may not be overridden.
-  void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
+  void LayerSetUp(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top);
 
-  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
-  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
+  virtual void Forward_cpu(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top);
+  virtual void Forward_gpu(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top);
 
   // Prefetches batches (asynchronously if to GPU memory)
   static const int PREFETCH_COUNT = 3;
@@ -118,25 +118,25 @@ class DummyDataLayer : public Layer<Dtype,Mtype> {
  public:
   explicit DummyDataLayer(const LayerParameter& param)
       : Layer<Dtype,Mtype>(param) {}
-  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
+  virtual void LayerSetUp(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top);
   // Data layers should be shared by multiple solvers in parallel
   virtual inline bool ShareInParallel() const { return true; }
   // Data layers have no bottoms, so reshaping is trivial.
-  virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {}
+  virtual void Reshape(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top);
 
   virtual inline const char* type() const { return "DummyData"; }
   virtual inline int ExactNumBottomBlobs() const { return 0; }
   virtual inline int MinTopBlobs() const { return 1; }
 
  protected:
-  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
-  virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {}
-  virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {}
+  virtual void Forward_cpu(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top);
+  virtual void Backward_cpu(const vector<BlobBase*>& top,
+      const vector<bool>& propagate_down, const vector<BlobBase*>& bottom) {}
+  virtual void Backward_gpu(const vector<BlobBase*>& top,
+      const vector<bool>& propagate_down, const vector<BlobBase*>& bottom) {}
 
   vector<shared_ptr<Filler<Dtype,Mtype> > > fillers_;
   vector<bool> refill_;
@@ -153,27 +153,27 @@ class HDF5DataLayer : public Layer<Dtype,Mtype> {
   explicit HDF5DataLayer(const LayerParameter& param)
       : Layer<Dtype,Mtype>(param) {}
   virtual ~HDF5DataLayer();
-  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
+  virtual void LayerSetUp(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top);
   // Data layers should be shared by multiple solvers in parallel
   virtual inline bool ShareInParallel() const { return true; }
   // Data layers have no bottoms, so reshaping is trivial.
-  virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {}
+  virtual void Reshape(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top);
 
   virtual inline const char* type() const { return "HDF5Data"; }
   virtual inline int ExactNumBottomBlobs() const { return 0; }
   virtual inline int MinTopBlobs() const { return 1; }
 
  protected:
-  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
-  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
-  virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {}
-  virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {}
+  virtual void Forward_cpu(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top);
+  virtual void Forward_gpu(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top);
+  virtual void Backward_cpu(const vector<BlobBase*>& top,
+      const vector<bool>& propagate_down, const vector<BlobBase*>& bottom) {}
+  virtual void Backward_gpu(const vector<BlobBase*>& top,
+      const vector<bool>& propagate_down, const vector<BlobBase*>& bottom) {}
   virtual void LoadHDF5FileData(const char* filename);
 
   std::vector<std::string> hdf_filenames_;
@@ -196,13 +196,13 @@ class HDF5OutputLayer : public Layer<Dtype,Mtype> {
   explicit HDF5OutputLayer(const LayerParameter& param)
       : Layer<Dtype,Mtype>(param), file_opened_(false) {}
   virtual ~HDF5OutputLayer();
-  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
+  virtual void LayerSetUp(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top);
   // Data layers should be shared by multiple solvers in parallel
   virtual inline bool ShareInParallel() const { return true; }
   // Data layers have no bottoms, so reshaping is trivial.
-  virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {}
+  virtual void Reshape(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top);
 
   virtual inline const char* type() const { return "HDF5Output"; }
   // TODO: no limit on the number of blobs
@@ -212,14 +212,14 @@ class HDF5OutputLayer : public Layer<Dtype,Mtype> {
   inline std::string file_name() const { return file_name_; }
 
  protected:
-  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
-  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
-  virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
-  virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+  virtual void Forward_cpu(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top);
+  virtual void Forward_gpu(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top);
+  virtual void Backward_cpu(const vector<BlobBase*>& top,
+      const vector<bool>& propagate_down, const vector<BlobBase*>& bottom);
+  virtual void Backward_gpu(const vector<BlobBase*>& top,
+      const vector<bool>& propagate_down, const vector<BlobBase*>& bottom);
   virtual void SaveBlobs();
 
   bool file_opened_;
@@ -290,8 +290,8 @@ class MemoryDataLayer : public BaseDataLayer<Dtype,Mtype> {
   int width() { return width_; }
 
  protected:
-  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
+  virtual void Forward_cpu(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top);
 
   int batch_size_, channels_, height_, width_, size_;
   Dtype* data_;

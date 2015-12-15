@@ -32,24 +32,24 @@ __global__ void MaxForward(const int nthreads, const Dtype* bottom_data_a,
 }
 
 template <typename Dtype, typename Mtype>
-void EltwiseLayer<Dtype,Mtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
-    const vector<Blob<Dtype>*>& top) {
+void EltwiseLayer<Dtype,Mtype>::Forward_gpu(const vector<BlobBase*>& bottom,
+    const vector<BlobBase*>& top) {
   int* mask = NULL;
   const int count = top[0]->count();
-  Dtype* top_data = top[0]->mutable_gpu_data();
+  Dtype* top_data = top[0]->mutable_gpu_data<Dtype>();
   switch (op_) {
   case EltwiseParameter_EltwiseOp_PROD:
-    caffe_gpu_mul<Dtype,Mtype>(count, bottom[0]->gpu_data(), bottom[1]->gpu_data(),
-        top_data);
+    caffe_gpu_mul<Dtype,Mtype>(count, bottom[0]->gpu_data<Dtype>(),
+        bottom[1]->gpu_data<Dtype>(), top_data);
     for (int i = 2; i < bottom.size(); ++i) {
-      caffe_gpu_mul<Dtype,Mtype>(count, top_data, bottom[i]->gpu_data(), top_data);
+      caffe_gpu_mul<Dtype,Mtype>(count, top_data, bottom[i]->gpu_data<Dtype>(), top_data);
     }
     break;
   case EltwiseParameter_EltwiseOp_SUM:
     caffe_gpu_set<Dtype,Mtype>(count, Mtype(0.), top_data);
     // TODO(shelhamer) does cuBLAS optimize to sum for coeff = 1?
     for (int i = 0; i < bottom.size(); ++i) {
-      caffe_gpu_axpy<Dtype,Mtype>(count, coeffs_[i], bottom[i]->gpu_data(), top_data);
+      caffe_gpu_axpy<Dtype,Mtype>(count, coeffs_[i], bottom[i]->gpu_data<Dtype>(), top_data);
     }
     break;
   case EltwiseParameter_EltwiseOp_MAX:
@@ -81,16 +81,16 @@ __global__ void MaxBackward(const int nthreads, const Dtype* top_diff,
 }
 
 template <typename Dtype, typename Mtype>
-void EltwiseLayer<Dtype,Mtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
-    const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
+void EltwiseLayer<Dtype,Mtype>::Backward_gpu(const vector<BlobBase*>& top,
+    const vector<bool>& propagate_down, const vector<BlobBase*>& bottom) {
   const int* mask = NULL;
   const int count = top[0]->count();
-  const Dtype* top_data = top[0]->gpu_data();
-  const Dtype* top_diff = top[0]->gpu_diff();
+  const Dtype* top_data = top[0]->gpu_data<Dtype>();
+  const Dtype* top_diff = top[0]->gpu_diff<Dtype>();
   for (int i = 0; i < bottom.size(); ++i) {
     if (propagate_down[i]) {
-      const Dtype* bottom_data = bottom[i]->gpu_data();
-      Dtype* bottom_diff = bottom[i]->mutable_gpu_diff();
+      const Dtype* bottom_data = bottom[i]->gpu_data<Dtype>();
+      Dtype* bottom_diff = bottom[i]->mutable_gpu_diff<Dtype>();
       switch (op_) {
       case EltwiseParameter_EltwiseOp_PROD:
         if (stable_prod_grad_) {
@@ -98,10 +98,10 @@ void EltwiseLayer<Dtype,Mtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
           for (int j = 0; j < bottom.size(); ++j) {
             if (i == j) { continue; }
             if (!initialized) {
-              caffe_copy(count, bottom[j]->gpu_data(), bottom_diff);
+              caffe_copy(count, bottom[j]->gpu_data<Dtype>(), bottom_diff);
               initialized = true;
             } else {
-              caffe_gpu_mul<Dtype,Mtype>(count, bottom[j]->gpu_data(), bottom_diff,
+              caffe_gpu_mul<Dtype,Mtype>(count, bottom[j]->gpu_data<Dtype>(), bottom_diff,
                             bottom_diff);
             }
           }

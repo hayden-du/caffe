@@ -26,15 +26,15 @@ __global__ void Concat(const int nthreads, const Dtype* in_data,
 }
 
 template <typename Dtype, typename Mtype>
-void ConcatLayer<Dtype,Mtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+void ConcatLayer<Dtype,Mtype>::Forward_gpu(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top) {
   if (bottom.size() == 1) { return; }
-  Dtype* top_data = top[0]->mutable_gpu_data();
+  Dtype* top_data = top[0]->mutable_gpu_data<Dtype>();
   int offset_concat_axis = 0;
   const int top_concat_axis = top[0]->shape(concat_axis_);
   const bool kForward = true;
   for (int i = 0; i < bottom.size(); ++i) {
-    const Dtype* bottom_data = bottom[i]->gpu_data();
+    const Dtype* bottom_data = bottom[i]->gpu_data<Dtype>();
     const int bottom_concat_axis = bottom[i]->shape(concat_axis_);
     const int bottom_concat_size = bottom_concat_axis * concat_input_size_;
     const int nthreads = bottom_concat_size * num_concats_;
@@ -47,17 +47,17 @@ void ConcatLayer<Dtype,Mtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
 }
 
 template <typename Dtype, typename Mtype>
-void ConcatLayer<Dtype,Mtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
+void ConcatLayer<Dtype,Mtype>::Backward_gpu(const vector<BlobBase*>& top,
+      const vector<bool>& propagate_down, const vector<BlobBase*>& bottom) {
   if (bottom.size() == 1) { return; }
-  const Dtype* top_diff = top[0]->gpu_diff();
+  const Dtype* top_diff = top[0]->gpu_diff<Dtype>();
   int offset_concat_axis = 0;
   const int top_concat_axis = top[0]->shape(concat_axis_);
   const bool kForward = false;
   for (int i = 0; i < bottom.size(); ++i) {
     const int bottom_concat_axis = bottom[i]->shape(concat_axis_);
     if (propagate_down[i]) {
-      Dtype* bottom_diff = bottom[i]->mutable_gpu_diff();
+      Dtype* bottom_diff = bottom[i]->mutable_gpu_diff<Dtype>();
       const int bottom_concat_size = bottom_concat_axis * concat_input_size_;
       const int nthreads = bottom_concat_size * num_concats_;
       Concat<Dtype,Mtype>  // NOLINT_NEXT_LINE(whitespace/operators)

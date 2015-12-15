@@ -8,10 +8,10 @@
 namespace caffe {
 
 template <typename Dtype, typename Mtype>
-void Im2colLayer<Dtype,Mtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
-  const Dtype* bottom_data = bottom[0]->gpu_data();
-  Dtype* top_data = top[0]->mutable_gpu_data();
+void Im2colLayer<Dtype,Mtype>::Forward_gpu(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top) {
+  const Dtype* bottom_data = bottom[0]->gpu_data<Dtype>();
+  Dtype* top_data = top[0]->mutable_gpu_data<Dtype>();
   const int num_kernels = channels_ * top[0]->count(channel_axis_ + 1);
   for (int n = 0; n < num_; ++n) {
     if (!force_nd_im2col_ && num_spatial_axes_ == 2) {
@@ -33,10 +33,10 @@ void Im2colLayer<Dtype,Mtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
 }
 
 template <typename Dtype, typename Mtype>
-void Im2colLayer<Dtype,Mtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
-  const Dtype* top_diff = top[0]->gpu_diff();
-  Dtype* bottom_diff = bottom[0]->mutable_gpu_diff();
+void Im2colLayer<Dtype,Mtype>::Backward_gpu(const vector<BlobBase*>& top,
+      const vector<bool>& propagate_down, const vector<BlobBase*>& bottom) {
+  const Dtype* top_diff = top[0]->gpu_diff<Dtype>();
+  Dtype* bottom_diff = bottom[0]->mutable_gpu_diff<Dtype>();
   for (int n = 0; n < num_; ++n) {
     if (!force_nd_im2col_ && num_spatial_axes_ == 2) {
       col2im_gpu(top_diff + n * top_dim_, channels_,

@@ -6,19 +6,19 @@ namespace caffe {
 
 template <typename Dtype, typename Mtype>
 void BasePrefetchingDataLayer<Dtype,Mtype>::Forward_gpu(
-    const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
+    const vector<BlobBase*>& bottom, const vector<BlobBase*>& top) {
   Batch<Dtype,Mtype>* batch = prefetch_full_.pop("Data layer prefetch queue empty");
   // Reshape to loaded data.
   top[0]->ReshapeLike(batch->data_);
   // Copy the data
   caffe_copy(batch->data_.count(), batch->data_.gpu_data(),
-      top[0]->mutable_gpu_data());
+      top[0]->mutable_gpu_data<Dtype>());
   if (this->output_labels_) {
     // Reshape to loaded labels.
     top[1]->ReshapeLike(batch->label_);
     // Copy the labels.
     caffe_copy(batch->label_.count(), batch->label_.gpu_data(),
-        top[1]->mutable_gpu_data());
+        top[1]->mutable_gpu_data<Dtype>());
   }
   // Ensure the copy is synchronous wrt the host, so that the next batch isn't
   // copied in meanwhile.

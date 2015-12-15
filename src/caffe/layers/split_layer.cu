@@ -7,27 +7,27 @@
 namespace caffe {
 
 template <typename Dtype, typename Mtype>
-void SplitLayer<Dtype,Mtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+void SplitLayer<Dtype,Mtype>::Forward_gpu(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top) {
   for (int i = 0; i < top.size(); ++i) {
     top[i]->ShareData(*bottom[0]);
   }
 }
 
 template <typename Dtype, typename Mtype>
-void SplitLayer<Dtype,Mtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
+void SplitLayer<Dtype,Mtype>::Backward_gpu(const vector<BlobBase*>& top,
+      const vector<bool>& propagate_down, const vector<BlobBase*>& bottom) {
   if (!propagate_down[0]) { return; }
   if (top.size() == 1) {
-    caffe_copy(count_, top[0]->gpu_diff(), bottom[0]->mutable_gpu_diff());
+    caffe_copy(count_, top[0]->gpu_diff<Dtype>(), bottom[0]->mutable_gpu_diff<Dtype>());
     return;
   }
-  caffe_gpu_add<Dtype,Mtype>(count_, top[0]->gpu_diff(), top[1]->gpu_diff(),
-                bottom[0]->mutable_gpu_diff());
+  caffe_gpu_add<Dtype,Mtype>(count_, top[0]->gpu_diff<Dtype>(), top[1]->gpu_diff<Dtype>(),
+                bottom[0]->mutable_gpu_diff<Dtype>());
   // Add remaining top blob diffs.
   for (int i = 2; i < top.size(); ++i) {
-    const Dtype* top_diff = top[i]->gpu_diff();
-    Dtype* bottom_diff = bottom[0]->mutable_gpu_diff();
+    const Dtype* top_diff = top[i]->gpu_diff<Dtype>();
+    Dtype* bottom_diff = bottom[0]->mutable_gpu_diff<Dtype>();
     caffe_gpu_axpy<Dtype,Mtype>(count_, Mtype(1.), top_diff, bottom_diff);
   }
 }

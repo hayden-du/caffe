@@ -156,10 +156,10 @@ __global__ void StoPoolForwardTest(const int nthreads,
 
 
 template <typename Dtype, typename Mtype>
-void PoolingLayer<Dtype,Mtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
-  const Dtype* bottom_data = bottom[0]->gpu_data();
-  Dtype* top_data = top[0]->mutable_gpu_data();
+void PoolingLayer<Dtype,Mtype>::Forward_gpu(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top) {
+  const Dtype* bottom_data = bottom[0]->gpu_data<Dtype>();
+  Dtype* top_data = top[0]->mutable_gpu_data<Dtype>();
   int count = top[0]->count();
   // We'll output the mask to top[1] if it's of size >1.
   const bool use_top_mask = top.size() > 1;
@@ -168,7 +168,7 @@ void PoolingLayer<Dtype,Mtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
   switch (this->layer_param_.pooling_param().pool()) {
   case PoolingParameter_PoolMethod_MAX:
     if (use_top_mask) {
-      top_mask = top[1]->mutable_gpu_data();
+      top_mask = top[1]->mutable_gpu_data<Dtype>();
     } else {
       mask = max_idx_.mutable_gpu_data();
     }
@@ -332,8 +332,8 @@ __global__ void StoPoolBackward(const int nthreads,
 
 
 template <typename Dtype, typename Mtype>
-void PoolingLayer<Dtype,Mtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
+void PoolingLayer<Dtype,Mtype>::Backward_gpu(const vector<BlobBase*>& top,
+      const vector<bool>& propagate_down, const vector<BlobBase*>& bottom) {
   if (!propagate_down[0]) {
     return;
   }

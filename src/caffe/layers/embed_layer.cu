@@ -42,10 +42,10 @@ __global__ void EmbedBackward(const int nthreads, const Dtype* bottom_data,
 }
 
 template <typename Dtype, typename Mtype>
-void EmbedLayer<Dtype,Mtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
-    const vector<Blob<Dtype>*>& top) {
-  const Dtype* bottom_data = bottom[0]->gpu_data();
-  Dtype* top_data = top[0]->mutable_gpu_data();
+void EmbedLayer<Dtype,Mtype>::Forward_gpu(const vector<BlobBase*>& bottom,
+    const vector<BlobBase*>& top) {
+  const Dtype* bottom_data = bottom[0]->gpu_data<Dtype>();
+  Dtype* top_data = top[0]->mutable_gpu_data<Dtype>();
   const Dtype* weight = this->blobs_[0]->gpu_data();
   const int count = top[0]->count();
   EmbedForward<Dtype,Mtype>  // NOLINT_NEXT_LINE(whitespace/operators)
@@ -59,20 +59,20 @@ void EmbedLayer<Dtype,Mtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
 }
 
 template <typename Dtype, typename Mtype>
-void EmbedLayer<Dtype,Mtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
-    const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
+void EmbedLayer<Dtype,Mtype>::Backward_gpu(const vector<BlobBase*>& top,
+    const vector<bool>& propagate_down, const vector<BlobBase*>& bottom) {
   CHECK(!propagate_down[0]) << "Can't backpropagate to EmbedLayer input.";
   if (this->param_propagate_down_[0]) {
     const int top_count = top[0]->count();
-    const Dtype* top_diff = top[0]->gpu_diff();
-    const Dtype* bottom_data = bottom[0]->gpu_data();
+    const Dtype* top_diff = top[0]->gpu_diff<Dtype>();
+    const Dtype* bottom_data = bottom[0]->gpu_data<Dtype>();
     Dtype* weight_diff = this->blobs_[0]->mutable_gpu_diff();
     EmbedBackward<Dtype,Mtype>  // NOLINT_NEXT_LINE(whitespace/operators)
         <<<CAFFE_GET_BLOCKS(top_count), CAFFE_CUDA_NUM_THREADS>>>(
         top_count, bottom_data, top_diff, M_, N_, K_, weight_diff);
   }
   if (bias_term_ && this->param_propagate_down_[1]) {
-    const Dtype* top_diff = top[0]->gpu_diff();
+    const Dtype* top_diff = top[0]->gpu_diff<Dtype>();
     Dtype* bias_diff = this->blobs_[1]->mutable_gpu_diff();
     caffe_gpu_gemv<Dtype,Mtype>(CblasTrans, M_, N_, 1, top_diff,
         bias_multiplier_.gpu_data(), 1, bias_diff);

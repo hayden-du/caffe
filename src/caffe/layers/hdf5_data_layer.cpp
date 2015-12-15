@@ -70,8 +70,8 @@ void HDF5DataLayer<Dtype,Mtype>::LoadHDF5FileData(const char* filename) {
 }
 
 template <typename Dtype, typename Mtype>
-void HDF5DataLayer<Dtype,Mtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+void HDF5DataLayer<Dtype,Mtype>::LayerSetUp(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top) {
   // Refuse transformation parameters since HDF5 is totally generic.
   CHECK(!this->layer_param_.has_transform_param()) <<
       this->type() << " does not transform data.";
@@ -126,8 +126,8 @@ void HDF5DataLayer<Dtype,Mtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
 }
 
 template <typename Dtype, typename Mtype>
-void HDF5DataLayer<Dtype,Mtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+void HDF5DataLayer<Dtype,Mtype>::Forward_cpu(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top) {
   const int batch_size = this->layer_param_.hdf5_data_param().batch_size();
   for (int i = 0; i < batch_size; ++i, ++current_row_) {
     if (current_row_ == hdf_blobs_[0]->shape(0)) {
@@ -152,7 +152,7 @@ void HDF5DataLayer<Dtype,Mtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       int data_dim = top[j]->count() / top[j]->shape(0);
       caffe_copy(data_dim,
           &hdf_blobs_[j]->cpu_data()[data_permutation_[current_row_]
-            * data_dim], &top[j]->mutable_cpu_data()[i * data_dim]);
+            * data_dim], &top[j]->mutable_cpu_data<Dtype>()[i * data_dim]);
     }
   }
 }

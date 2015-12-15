@@ -7,12 +7,12 @@
 namespace caffe {
 
 template <typename Dtype, typename Mtype>
-void SilenceLayer<Dtype,Mtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
+void SilenceLayer<Dtype,Mtype>::Backward_cpu(const vector<BlobBase*>& top,
+      const vector<bool>& propagate_down, const vector<BlobBase*>& bottom) {
   for (int i = 0; i < bottom.size(); ++i) {
     if (propagate_down[i]) {
       caffe_set(bottom[i]->count(), typedConsts<Dtype>::zero,
-                bottom[i]->mutable_cpu_diff());
+                bottom[i]->mutable_cpu_diff<Dtype>());
     }
   }
 }

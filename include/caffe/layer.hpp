@@ -345,8 +345,8 @@ class Layer: public LayerBase {
    *
    * Your layer should implement Forward_cpu and (optionally) Forward_gpu.
    */
-  inline Mtype Forward(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
+  inline Mtype Forward(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top);
 
   /**
    * @brief Given the top blob error gradients, compute the bottom blob error
@@ -369,9 +369,9 @@ class Layer: public LayerBase {
    *
    * Your layer should implement Backward_cpu and (optionally) Backward_gpu.
    */
-  inline void Backward(const vector<Blob<Dtype>*>& top,
+  inline void Backward(const vector<BlobBase*>& top,
       const vector<bool>& propagate_down,
-      const vector<Blob<Dtype>*>& bottom);
+      const vector<BlobBase*>& bottom);
 
   /**
    * @brief Returns the vector of learnable parameter blobs.
@@ -411,14 +411,14 @@ class Layer: public LayerBase {
   vector<Dtype> loss_;
 
   /** @brief Using the CPU device, compute the layer output. */
-  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) = 0;
+  virtual void Forward_cpu(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top) = 0;
   /**
    * @brief Using the GPU device, compute the layer output.
    *        Fall back to Forward_cpu() if unavailable.
    */
-  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+  virtual void Forward_gpu(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top) {
     // LOG(WARNING) << "Using CPU code as backup.";
     Forward_cpu(bottom, top);
   }
@@ -427,17 +427,17 @@ class Layer: public LayerBase {
    * @brief Using the CPU device, compute the gradients for any parameters and
    *        for the bottom blobs if propagate_down is true.
    */
-  virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
+  virtual void Backward_cpu(const vector<BlobBase*>& top,
       const vector<bool>& propagate_down,
-      const vector<Blob<Dtype>*>& bottom) = 0;
+      const vector<BlobBase*>& bottom) = 0;
   /**
    * @brief Using the GPU device, compute the gradients for any parameters and
    *        for the bottom blobs if propagate_down is true.
    *        Fall back to Backward_cpu() if unavailable.
    */
-  virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
+  virtual void Backward_gpu(const vector<BlobBase*>& top,
       const vector<bool>& propagate_down,
-      const vector<Blob<Dtype>*>& bottom) {
+      const vector<BlobBase*>& bottom) {
     // LOG(WARNING) << "Using CPU code as backup.";
     Backward_cpu(top, propagate_down, bottom);
   }
@@ -456,7 +456,7 @@ class Layer: public LayerBase {
         if (loss_weight == 0.F) { continue; }
         this->set_loss(top_id, loss_weight);
         const int count = top[top_id]->count();
-        Dtype* loss_multiplier = (Dtype*)top[top_id]->diff()->mutable_cpu_data();
+        Dtype* loss_multiplier = top[top_id]->mutable_cpu_data<Dtype>();
         caffe_set(count, loss_weight, loss_multiplier);
       }
     }
@@ -468,8 +468,8 @@ class Layer: public LayerBase {
 // gpu specific implementations instead, and should not change these
 // functions.
 template <typename Dtype, typename Mtype>
-inline Mtype Layer<Dtype,Mtype>::Forward(const vector<Blob<Dtype>*>& bottom,
-    const vector<Blob<Dtype>*>& top) {
+inline Mtype Layer<Dtype,Mtype>::Forward(const vector<BlobBase*>& bottom,
+    const vector<BlobBase*>& top) {
   // Lock during forward to ensure sequential forward
   Lock();
   Mtype loss = 0;
@@ -480,8 +480,8 @@ inline Mtype Layer<Dtype,Mtype>::Forward(const vector<Blob<Dtype>*>& bottom,
     for (int top_id = 0; top_id < top.size(); ++top_id) {
       if (!this->loss(top_id)) { continue; }
       const int count = top[top_id]->count();
-      const Dtype* data = top[top_id]->cpu_data();
-      const Dtype* loss_weights = top[top_id]->cpu_diff();
+      const Dtype* data = top[top_id]->cpu_data<Dtype>();
+      const Dtype* loss_weights = top[top_id]->cpu_diff<Dtype>();
       loss += caffe_cpu_dot<Dtype,Mtype>(count, data, loss_weights);
     }
     break;
@@ -491,8 +491,8 @@ inline Mtype Layer<Dtype,Mtype>::Forward(const vector<Blob<Dtype>*>& bottom,
     for (int top_id = 0; top_id < top.size(); ++top_id) {
       if (!this->loss(top_id)) { continue; }
       const int count = top[top_id]->count();
-      const Dtype* data = top[top_id]->gpu_data();
-      const Dtype* loss_weights = top[top_id]->gpu_diff();
+      const Dtype* data = top[top_id]->gpu_data<Dtype>();
+      const Dtype* loss_weights = top[top_id]->gpu_diff<Dtype>();
       Mtype blob_loss = 0;
       caffe_gpu_dot<Dtype,Mtype>(count, data, loss_weights, &blob_loss);
       loss += blob_loss;
@@ -507,9 +507,9 @@ inline Mtype Layer<Dtype,Mtype>::Forward(const vector<Blob<Dtype>*>& bottom,
 }
 
 template <typename Dtype, typename Mtype>
-inline void Layer<Dtype,Mtype>::Backward(const vector<Blob<Dtype>*>& top,
+inline void Layer<Dtype,Mtype>::Backward(const vector<BlobBase*>& top,
     const vector<bool>& propagate_down,
-    const vector<Blob<Dtype>*>& bottom) {
+    const vector<BlobBase*>& bottom) {
   switch (Caffe::mode()) {
   case Caffe::CPU:
     Backward_cpu(top, propagate_down, bottom);

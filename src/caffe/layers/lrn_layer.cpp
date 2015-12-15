@@ -7,8 +7,8 @@
 namespace caffe {
 
 template <typename Dtype, typename Mtype>
-void LRNLayer<Dtype,Mtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+void LRNLayer<Dtype,Mtype>::LayerSetUp(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top) {
   size_ = this->layer_param_.lrn_param().local_size();
   CHECK_EQ(size_ % 2, 1) << "LRN only supports odd values for local_size";
   pre_pad_ = (size_ - 1) / 2;
@@ -67,8 +67,8 @@ void LRNLayer<Dtype,Mtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
 }
 
 template <typename Dtype, typename Mtype>
-void LRNLayer<Dtype,Mtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+void LRNLayer<Dtype,Mtype>::Reshape(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top) {
   CHECK_EQ(4, bottom[0]->num_axes()) << "Input must have 4 axes, "
       << "corresponding to (num, channels, height, width)";
   num_ = bottom[0]->num();
@@ -91,8 +91,8 @@ void LRNLayer<Dtype,Mtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
 }
 
 template <typename Dtype, typename Mtype>
-void LRNLayer<Dtype,Mtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-    const vector<Blob<Dtype>*>& top) {
+void LRNLayer<Dtype,Mtype>::Forward_cpu(const vector<BlobBase*>& bottom,
+    const vector<BlobBase*>& top) {
   switch (this->layer_param_.lrn_param().norm_region()) {
   case LRNParameter_NormRegion_ACROSS_CHANNELS:
     CrossChannelForward_cpu(bottom, top);
@@ -163,8 +163,8 @@ void LRNLayer<Dtype,Mtype>::WithinChannelForward(
 }
 
 template <typename Dtype, typename Mtype>
-void LRNLayer<Dtype,Mtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
-    const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
+void LRNLayer<Dtype,Mtype>::Backward_cpu(const vector<BlobBase*>& top,
+    const vector<bool>& propagate_down, const vector<BlobBase*>& bottom) {
   switch (this->layer_param_.lrn_param().norm_region()) {
   case LRNParameter_NormRegion_ACROSS_CHANNELS:
     CrossChannelBackward_cpu(top, propagate_down, bottom);

@@ -12,7 +12,7 @@ namespace caffe {
 
 template <typename Dtype, typename Mtype>
 void AccuracyLayer<Dtype,Mtype>::LayerSetUp(
-  const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
+  const vector<BlobBase*>& bottom, const vector<BlobBase*>& top) {
   top_k_ = this->layer_param_.accuracy_param().top_k();
 
   has_ignore_label_ =
@@ -24,7 +24,7 @@ void AccuracyLayer<Dtype,Mtype>::LayerSetUp(
 
 template <typename Dtype, typename Mtype>
 void AccuracyLayer<Dtype,Mtype>::Reshape(
-  const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
+  const vector<BlobBase*>& bottom, const vector<BlobBase*>& top) {
   CHECK_LE(top_k_, bottom[0]->count() / bottom[1]->count())
       << "top_k must be less than or equal to the number of classes.";
   label_axis_ =
@@ -49,10 +49,10 @@ void AccuracyLayer<Dtype,Mtype>::Reshape(
 }
 
 template <typename Dtype, typename Mtype>
-void AccuracyLayer<Dtype,Mtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-    const vector<Blob<Dtype>*>& top) {
-  const Dtype* bottom_data = bottom[0]->cpu_data();
-  const Dtype* bottom_label = bottom[1]->cpu_data();
+void AccuracyLayer<Dtype,Mtype>::Forward_cpu(const vector<BlobBase*>& bottom,
+    const vector<BlobBase*>& top) {
+  const Dtype* bottom_data = bottom[0]->cpu_data<Dtype>();
+  const Dtype* bottom_label = bottom[1]->cpu_data<Dtype>();
   const int dim = bottom[0]->count() / outer_num_;
   const int num_labels = bottom[0]->shape(label_axis_);
 
@@ -103,7 +103,7 @@ void AccuracyLayer<Dtype,Mtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 
   // LOG(INFO) << "Accuracy: " << accuracy;
   double ratio = (double) validCount / count;
-  top[0]->mutable_cpu_data()[0] = ratio;
+  top[0]->mutable_cpu_data<Dtype>()[0] = ratio;
   if (top.size() > 1) {
     for (int i = 0; i < top[1]->count(); ++i) {
         ratio = 
@@ -111,7 +111,7 @@ void AccuracyLayer<Dtype,Mtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
             0.0 : 
             (double) valid_counts_.cpu_data()[i] / counts_.cpu_data()[i];
 
-      top[1]->mutable_cpu_data()[i] = (Dtype) ratio;
+      top[1]->mutable_cpu_data<Dtype>()[i] = (Dtype) ratio;
     }
   }
   // Accuracy layer should not be used as a loss function.

@@ -21,9 +21,9 @@ __global__ void Tile(const int nthreads, const Dtype* bottom_data,
 
 template <typename Dtype, typename Mtype>
 void TileLayer<Dtype,Mtype>::Forward_gpu(
-    const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
-  const Dtype* bottom_data = bottom[0]->gpu_data();
-  Dtype* top_data = top[0]->mutable_gpu_data();
+    const vector<BlobBase*>& bottom, const vector<BlobBase*>& top) {
+  const Dtype* bottom_data = bottom[0]->gpu_data<Dtype>();
+  Dtype* top_data = top[0]->mutable_gpu_data<Dtype>();
   const int bottom_tile_axis = bottom[0]->shape(axis_);
   const int nthreads = top[0]->count();
   Tile<Dtype,Mtype>  // NOLINT_NEXT_LINE(whitespace/operators)
@@ -49,11 +49,11 @@ __global__ void TileBackward(const int nthreads, const Dtype* top_diff,
 }
 
 template <typename Dtype, typename Mtype>
-void TileLayer<Dtype,Mtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
-    const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
+void TileLayer<Dtype,Mtype>::Backward_gpu(const vector<BlobBase*>& top,
+    const vector<bool>& propagate_down, const vector<BlobBase*>& bottom) {
   if (!propagate_down[0]) { return; }
-  const Dtype* top_diff = top[0]->gpu_diff();
-  Dtype* bottom_diff = bottom[0]->mutable_gpu_diff();
+  const Dtype* top_diff = top[0]->gpu_diff<Dtype>();
+  Dtype* bottom_diff = bottom[0]->mutable_gpu_diff<Dtype>();
   const int bottom_tile_axis = bottom[0]->shape(axis_);
   const int tile_size = inner_dim_ / bottom_tile_axis;
   const int nthreads = bottom[0]->count();

@@ -190,7 +190,71 @@ class BlobBase {
     return diff_;
   }
 
+  template <typename Dtype>
+  void set_cpu_data(Dtype* data) {
+    CHECK(data);
+    CHECK(dtsize() == sizeof(Dtype));
+    data_->set_cpu_data(data);
+  }
+
+  template <typename Dtype>
+  const Dtype* cpu_data() const {
+    CHECK(data_);
+    CHECK(dtsize() == sizeof(Dtype));
+    return static_cast<const Dtype*>(data_->cpu_data());
+  }
+
+  template <typename Dtype>
+  const Dtype* gpu_data() const {
+    CHECK(data_);
+    CHECK(dtsize() == sizeof(Dtype));
+    return static_cast<const Dtype*>(data_->gpu_data());
+  }
+
+  template <typename Dtype>
+  const Dtype* cpu_diff() const {
+    CHECK(data_);
+    CHECK(dtsize() == sizeof(Dtype));
+    return static_cast<const Dtype*>(diff_->cpu_data());
+  }
+
+  template <typename Dtype>
+  const Dtype* gpu_diff() const {
+    CHECK(data_);
+    CHECK(dtsize() == sizeof(Dtype));
+    return static_cast<const Dtype*>(diff_->gpu_data());
+  }
+
+  template <typename Dtype>
+  Dtype* mutable_cpu_data() {
+    CHECK(data_);
+    CHECK(dtsize() == sizeof(Dtype));
+    return static_cast<Dtype*>(data_->mutable_cpu_data());
+  }
+
+  template <typename Dtype>
+  Dtype* mutable_gpu_data() {
+    CHECK(data_);
+    CHECK(dtsize() == sizeof(Dtype));
+    return static_cast<Dtype*>(data_->mutable_gpu_data());
+  }
+
+  template <typename Dtype>
+  Dtype* mutable_cpu_diff() {
+    CHECK(data_);
+    CHECK(dtsize() == sizeof(Dtype));
+    return static_cast<Dtype*>(diff_->mutable_cpu_data());
+  }
+
+  template <typename Dtype>
+  Dtype* mutable_gpu_diff() {
+    CHECK(data_);
+    CHECK(dtsize() == sizeof(Dtype));
+    return static_cast<Dtype*>(diff_->mutable_gpu_data());
+  }
+
   const int* gpu_shape() const;
+
   template <typename Dtype, typename Mtype>
   void Update();
 
@@ -257,8 +321,8 @@ public:
   explicit Blob(const vector<int>& shape)
     : BlobBase(shape) {}
 
-  const Dtype* cpu_data() const;
   void set_cpu_data(Dtype* data);
+  const Dtype* cpu_data() const;
   const Dtype* gpu_data() const;
   const Dtype* cpu_diff() const;
   const Dtype* gpu_diff() const;

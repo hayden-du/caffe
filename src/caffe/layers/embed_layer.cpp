@@ -10,8 +10,8 @@
 namespace caffe {
 
 template <typename Dtype, typename Mtype>
-void EmbedLayer<Dtype,Mtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+void EmbedLayer<Dtype,Mtype>::LayerSetUp(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top) {
   N_ = this->layer_param_.embed_param().num_output();
   CHECK_GT(N_, 0) << "EmbedLayer num_output must be positive.";
   K_ = this->layer_param_.embed_param().input_dim();
@@ -49,8 +49,8 @@ void EmbedLayer<Dtype,Mtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
 }
 
 template <typename Dtype, typename Mtype>
-void EmbedLayer<Dtype,Mtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+void EmbedLayer<Dtype,Mtype>::Reshape(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top) {
   // Figure out the dimensions
   M_ = bottom[0]->count();
   vector<int> top_shape = bottom[0]->shape();
@@ -65,11 +65,11 @@ void EmbedLayer<Dtype,Mtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
 }
 
 template <typename Dtype, typename Mtype>
-void EmbedLayer<Dtype,Mtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-    const vector<Blob<Dtype>*>& top) {
-  const Dtype* bottom_data = bottom[0]->cpu_data();
+void EmbedLayer<Dtype,Mtype>::Forward_cpu(const vector<BlobBase*>& bottom,
+    const vector<BlobBase*>& top) {
+  const Dtype* bottom_data = bottom[0]->cpu_data<Dtype>();
   const Dtype* weight = this->blobs_[0]->cpu_data();
-  Dtype* top_data = top[0]->mutable_cpu_data();
+  Dtype* top_data = top[0]->mutable_cpu_data<Dtype>();
   int index;
   for (int n = 0; n < M_; ++n) {
     index = static_cast<int>(bottom_data[n]);
@@ -86,12 +86,12 @@ void EmbedLayer<Dtype,Mtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 }
 
 template <typename Dtype, typename Mtype>
-void EmbedLayer<Dtype,Mtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
-    const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
+void EmbedLayer<Dtype,Mtype>::Backward_cpu(const vector<BlobBase*>& top,
+    const vector<bool>& propagate_down, const vector<BlobBase*>& bottom) {
   CHECK(!propagate_down[0]) << "Can't backpropagate to EmbedLayer input.";
   if (this->param_propagate_down_[0]) {
-    const Dtype* top_diff = top[0]->cpu_diff();
-    const Dtype* bottom_data = bottom[0]->cpu_data();
+    const Dtype* top_diff = top[0]->cpu_diff<Dtype>();
+    const Dtype* bottom_data = bottom[0]->cpu_data<Dtype>();
     // Gradient with respect to weight
     Dtype* weight_diff = this->blobs_[0]->mutable_cpu_diff();
     int index;
@@ -105,7 +105,7 @@ void EmbedLayer<Dtype,Mtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     }
   }
   if (bias_term_ && this->param_propagate_down_[1]) {
-    const Dtype* top_diff = top[0]->cpu_diff();
+    const Dtype* top_diff = top[0]->cpu_diff<Dtype>();
     Dtype* bias_diff = this->blobs_[1]->mutable_cpu_diff();
     caffe_cpu_gemv<Dtype,Mtype>(CblasTrans, M_, N_, Mtype(1), top_diff,
         bias_multiplier_.cpu_data(), Mtype(1), bias_diff);

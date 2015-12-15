@@ -11,11 +11,11 @@
 namespace caffe {
 
 template <typename Dtype, typename Mtype>
-void HingeLossLayer<Dtype,Mtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-    const vector<Blob<Dtype>*>& top) {
-  const Dtype* bottom_data = bottom[0]->cpu_data();
-  Dtype* bottom_diff = bottom[0]->mutable_cpu_diff();
-  const Dtype* label = bottom[1]->cpu_data();
+void HingeLossLayer<Dtype,Mtype>::Forward_cpu(const vector<BlobBase*>& bottom,
+    const vector<BlobBase*>& top) {
+  const Dtype* bottom_data = bottom[0]->cpu_data<Dtype>();
+  Dtype* bottom_diff = bottom[0]->mutable_cpu_diff<Dtype>();
+  const Dtype* label = bottom[1]->cpu_data<Dtype>();
   int num = bottom[0]->num();
   int count = bottom[0]->count();
   int dim = count / num;
@@ -31,7 +31,7 @@ void HingeLossLayer<Dtype,Mtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom
 						      Dtype(0.f), Dtype(1. + bottom_diff[i * dim + j]));
     }
   }
-  Dtype* loss = top[0]->mutable_cpu_data();
+  Dtype* loss = top[0]->mutable_cpu_data<Dtype>();
   switch (this->layer_param_.hinge_loss_param().norm()) {
   case HingeLossParameter_Norm_L1:
     loss[0] = caffe_cpu_asum<Dtype,Mtype>(count, bottom_diff) / num ;
@@ -45,15 +45,15 @@ void HingeLossLayer<Dtype,Mtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom
 }
 
 template <typename Dtype, typename Mtype>
-void HingeLossLayer<Dtype,Mtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
-    const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
+void HingeLossLayer<Dtype,Mtype>::Backward_cpu(const vector<BlobBase*>& top,
+    const vector<bool>& propagate_down, const vector<BlobBase*>& bottom) {
   if (propagate_down[1]) {
     LOG(FATAL) << this->type()
                << " Layer cannot backpropagate to label inputs.";
   }
   if (propagate_down[0]) {
-    Dtype* bottom_diff = bottom[0]->mutable_cpu_diff();
-    const Dtype* label = bottom[1]->cpu_data();
+    Dtype* bottom_diff = bottom[0]->mutable_cpu_diff<Dtype>();
+    const Dtype* label = bottom[1]->cpu_data<Dtype>();
     int num = bottom[0]->num();
     int count = bottom[0]->count();
     int dim = count / num;
@@ -63,7 +63,7 @@ void HingeLossLayer<Dtype,Mtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
           bottom_diff[i * dim + static_cast<int>(label[i])] * -1;
     }
 
-    const Mtype loss_weight = top[0]->cpu_diff()[0];
+    const Mtype loss_weight = top[0]->cpu_diff<Dtype>()[0];
     switch (this->layer_param_.hinge_loss_param().norm()) {
     case HingeLossParameter_Norm_L1:
       caffe_cpu_sign(count, bottom_diff, bottom_diff);

@@ -8,8 +8,8 @@
 namespace caffe {
 
 template <typename Dtype, typename Mtype>
-void PowerLayer<Dtype,Mtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+void PowerLayer<Dtype,Mtype>::LayerSetUp(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top) {
   NeuronLayer<Dtype,Mtype>::LayerSetUp(bottom, top);
   power_ = this->layer_param_.power_param().power();
   scale_ = this->layer_param_.power_param().scale();
@@ -19,9 +19,9 @@ void PowerLayer<Dtype,Mtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
 
 // Compute y = (shift + scale * x)^power
 template <typename Dtype, typename Mtype>
-void PowerLayer<Dtype,Mtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-    const vector<Blob<Dtype>*>& top) {
-  Dtype* top_data = top[0]->mutable_cpu_data();
+void PowerLayer<Dtype,Mtype>::Forward_cpu(const vector<BlobBase*>& bottom,
+    const vector<BlobBase*>& top) {
+  Dtype* top_data = top[0]->mutable_cpu_data<Dtype>();
   const int count = bottom[0]->count();
   // Special case where we can ignore the input: scale or power is 0.
   if (diff_scale_ == Mtype(0)) {
@@ -29,7 +29,7 @@ void PowerLayer<Dtype,Mtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     caffe_set(count, value, top_data);
     return;
   }
-  const Dtype* bottom_data = bottom[0]->cpu_data();
+  const Dtype* bottom_data = bottom[0]->cpu_data<Dtype>();
   caffe_copy(count, bottom_data, top_data);
   if (scale_ != Mtype(1)) {
     caffe_scal<Dtype,Mtype>(count, scale_, top_data);
@@ -43,17 +43,17 @@ void PowerLayer<Dtype,Mtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 }
 
 template <typename Dtype, typename Mtype>
-void PowerLayer<Dtype,Mtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
+void PowerLayer<Dtype,Mtype>::Backward_cpu(const vector<BlobBase*>& top,
     const vector<bool>& propagate_down,
-    const vector<Blob<Dtype>*>& bottom) {
+    const vector<BlobBase*>& bottom) {
   if (propagate_down[0]) {
-    Dtype* bottom_diff = bottom[0]->mutable_cpu_diff();
+    Dtype* bottom_diff = bottom[0]->mutable_cpu_diff<Dtype>();
     const int count = bottom[0]->count();
-    const Dtype* top_diff = top[0]->cpu_diff();
+    const Dtype* top_diff = top[0]->cpu_diff<Dtype>();
     if (diff_scale_ == 0. || power_ == 1.) {
       caffe_set(count, Dtype(diff_scale_), bottom_diff);
     } else {
-      const Dtype* bottom_data = bottom[0]->cpu_data();
+      const Dtype* bottom_data = bottom[0]->cpu_data<Dtype>();
       // Compute dy/dx = scale * power * (shift + scale * x)^(power - 1)
       //               = diff_scale * y / (shift + scale * x)
       if (power_ == Mtype(2)) {
@@ -70,7 +70,7 @@ void PowerLayer<Dtype,Mtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
         //     -> dy/dx = scale * power * (scale * x)^(power - 1)
         //              = scale * power * (scale * x)^power * (scale * x)^(-1)
         //              = power * y / x
-        const Dtype* top_data = top[0]->cpu_data();
+        const Dtype* top_data = top[0]->cpu_data<Dtype>();
         caffe_div(count, top_data, bottom_data, bottom_diff);
         caffe_scal<Dtype,Mtype>(count, power_, bottom_diff);
       } else {
@@ -81,7 +81,7 @@ void PowerLayer<Dtype,Mtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
         if (shift_ != Mtype(0)) {
           caffe_add_scalar<Dtype,Mtype>(count, shift_, bottom_diff);
         }
-        const Dtype* top_data = top[0]->cpu_data();
+        const Dtype* top_data = top[0]->cpu_data<Dtype>();
         caffe_div(count, top_data, bottom_diff, bottom_diff);
         if (diff_scale_ != Mtype(1)) {
           caffe_scal<Dtype,Mtype>(count, diff_scale_, bottom_diff);

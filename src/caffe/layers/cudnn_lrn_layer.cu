@@ -10,10 +10,10 @@
 namespace caffe {
 
 template <typename Dtype, typename Mtype>
-void CuDNNLRNLayer<Dtype,Mtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
-    const vector<Blob<Dtype>*>& top) {
-  const Dtype* bottom_data = bottom[0]->gpu_data();
-  Dtype* top_data = top[0]->mutable_gpu_data();
+void CuDNNLRNLayer<Dtype,Mtype>::Forward_gpu(const vector<BlobBase*>& bottom,
+    const vector<BlobBase*>& top) {
+  const Dtype* bottom_data = bottom[0]->gpu_data<Dtype>();
+  Dtype* top_data = top[0]->mutable_gpu_data<Dtype>();
 
   CUDNN_CHECK(cudnnLRNCrossChannelForward(
         Caffe::cudnn_handle(), norm_desc_, CUDNN_LRN_CROSS_CHANNEL_DIM1,
@@ -24,12 +24,12 @@ void CuDNNLRNLayer<Dtype,Mtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
 }
 
 template <typename Dtype, typename Mtype>
-void CuDNNLRNLayer<Dtype,Mtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
-    const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
-  const Dtype* top_diff = top[0]->gpu_diff();
-  const Dtype* top_data = top[0]->gpu_data();
-  const Dtype* bottom_data = bottom[0]->gpu_data();
-  Dtype* bottom_diff = bottom[0]->mutable_gpu_diff();
+void CuDNNLRNLayer<Dtype,Mtype>::Backward_gpu(const vector<BlobBase*>& top,
+    const vector<bool>& propagate_down, const vector<BlobBase*>& bottom) {
+  const Dtype* top_diff = top[0]->gpu_diff<Dtype>();
+  const Dtype* top_data = top[0]->gpu_data<Dtype>();
+  const Dtype* bottom_data = bottom[0]->gpu_data<Dtype>();
+  Dtype* bottom_diff = bottom[0]->mutable_gpu_diff<Dtype>();
 
   CUDNN_CHECK(cudnnLRNCrossChannelBackward(
         Caffe::cudnn_handle(), norm_desc_, CUDNN_LRN_CROSS_CHANNEL_DIM1,

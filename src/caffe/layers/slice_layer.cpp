@@ -8,8 +8,8 @@
 namespace caffe {
 
 template <typename Dtype, typename Mtype>
-void SliceLayer<Dtype,Mtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+void SliceLayer<Dtype,Mtype>::LayerSetUp(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top) {
   const SliceParameter& slice_param = this->layer_param_.slice_param();
   CHECK(!(slice_param.has_axis() && slice_param.has_slice_dim()))
       << "Either axis or slice_dim should be specified; not both.";
@@ -20,8 +20,8 @@ void SliceLayer<Dtype,Mtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
 }
 
 template <typename Dtype, typename Mtype>
-void SliceLayer<Dtype,Mtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+void SliceLayer<Dtype,Mtype>::Reshape(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top) {
   const int num_axes = bottom[0]->num_axes();
   const SliceParameter& slice_param = this->layer_param_.slice_param();
   if (slice_param.has_slice_dim()) {
@@ -74,14 +74,14 @@ void SliceLayer<Dtype,Mtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
 }
 
 template <typename Dtype, typename Mtype>
-void SliceLayer<Dtype,Mtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+void SliceLayer<Dtype,Mtype>::Forward_cpu(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top) {
   if (top.size() == 1) { return; }
   int offset_slice_axis = 0;
-  const Dtype* bottom_data = bottom[0]->cpu_data();
+  const Dtype* bottom_data = bottom[0]->cpu_data<Dtype>();
   const int bottom_slice_axis = bottom[0]->shape(slice_axis_);
   for (int i = 0; i < top.size(); ++i) {
-    Dtype* top_data = top[i]->mutable_cpu_data();
+    Dtype* top_data = top[i]->mutable_cpu_data<Dtype>();
     const int top_slice_axis = top[i]->shape(slice_axis_);
     for (int n = 0; n < num_slices_; ++n) {
       const int top_offset = n * top_slice_axis * slice_size_;
@@ -95,14 +95,14 @@ void SliceLayer<Dtype,Mtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 }
 
 template <typename Dtype, typename Mtype>
-void SliceLayer<Dtype,Mtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
+void SliceLayer<Dtype,Mtype>::Backward_cpu(const vector<BlobBase*>& top,
+      const vector<bool>& propagate_down, const vector<BlobBase*>& bottom) {
   if (!propagate_down[0] || top.size() == 1) { return; }
   int offset_slice_axis = 0;
-  Dtype* bottom_diff = bottom[0]->mutable_cpu_diff();
+  Dtype* bottom_diff = bottom[0]->mutable_cpu_diff<Dtype>();
   const int bottom_slice_axis = bottom[0]->shape(slice_axis_);
   for (int i = 0; i < top.size(); ++i) {
-    const Dtype* top_diff = top[i]->cpu_diff();
+    const Dtype* top_diff = top[i]->cpu_diff<Dtype>();
     const int top_slice_axis = top[i]->shape(slice_axis_);
     for (int n = 0; n < num_slices_; ++n) {
       const int top_offset = n * top_slice_axis * slice_size_;

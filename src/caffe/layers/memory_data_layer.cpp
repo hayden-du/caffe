@@ -107,13 +107,13 @@ void MemoryDataLayer<Dtype,Mtype>::set_batch_size(int new_size) {
 }
 
 template <typename Dtype, typename Mtype>
-void MemoryDataLayer<Dtype,Mtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+void MemoryDataLayer<Dtype,Mtype>::Forward_cpu(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top) {
   CHECK(data_) << "MemoryDataLayer needs to be initalized by calling Reset";
   top[0]->Reshape(batch_size_, channels_, height_, width_);
   top[1]->Reshape(batch_size_, 1, 1, 1);
-  top[0]->set_cpu_data(data_ + pos_ * size_);
-  top[1]->set_cpu_data(labels_ + pos_);
+  top[0]->set_cpu_data<Dtype>(data_ + pos_ * size_);
+  top[1]->set_cpu_data<Dtype>(labels_ + pos_);
   pos_ = (pos_ + batch_size_) % n_;
   if (pos_ == 0)
     has_new_data_ = false;

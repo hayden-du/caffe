@@ -62,8 +62,8 @@ LayerParameter SPPLayer<Dtype,Mtype>::GetPoolingParam(const int pyramid_level,
 }
 
 template <typename Dtype, typename Mtype>
-void SPPLayer<Dtype,Mtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+void SPPLayer<Dtype,Mtype>::LayerSetUp(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top) {
   SPPParameter spp_param = this->layer_param_.spp_param();
 
   num_ = bottom[0]->num();
@@ -143,8 +143,8 @@ void SPPLayer<Dtype,Mtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
 }
 
 template <typename Dtype, typename Mtype>
-void SPPLayer<Dtype,Mtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+void SPPLayer<Dtype,Mtype>::Reshape(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top) {
   CHECK_EQ(4, bottom[0]->num_axes()) << "Input must have 4 axes, "
       << "corresponding to (num, channels, height, width)";
   // Do nothing if bottom shape is unchanged since last Reshape
@@ -185,8 +185,8 @@ void SPPLayer<Dtype,Mtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
 }
 
 template <typename Dtype, typename Mtype>
-void SPPLayer<Dtype,Mtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+void SPPLayer<Dtype,Mtype>::Forward_cpu(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top) {
   if (pyramid_height_ == 1) {
     pooling_layers_[0]->Forward(bottom, top);
     return;
@@ -202,8 +202,8 @@ void SPPLayer<Dtype,Mtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 }
 
 template <typename Dtype, typename Mtype>
-void SPPLayer<Dtype,Mtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
+void SPPLayer<Dtype,Mtype>::Backward_cpu(const vector<BlobBase*>& top,
+      const vector<bool>& propagate_down, const vector<BlobBase*>& bottom) {
   if (!propagate_down[0]) {
     return;
   }

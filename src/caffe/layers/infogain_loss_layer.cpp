@@ -12,7 +12,7 @@ namespace caffe {
 
 template <typename Dtype, typename Mtype>
 void InfogainLossLayer<Dtype,Mtype>::LayerSetUp(
-    const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
+    const vector<BlobBase*>& bottom, const vector<BlobBase*>& top) {
   LossLayer<Dtype,Mtype>::LayerSetUp(bottom, top);
   if (bottom.size() < 3) {
     CHECK(this->layer_param_.infogain_loss_param().has_source())
@@ -26,9 +26,9 @@ void InfogainLossLayer<Dtype,Mtype>::LayerSetUp(
 
 template <typename Dtype, typename Mtype>
 void InfogainLossLayer<Dtype,Mtype>::Reshape(
-    const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
+    const vector<BlobBase*>& bottom, const vector<BlobBase*>& top) {
   LossLayer<Dtype,Mtype>::Reshape(bottom, top);
-  Blob<Dtype>* infogain = NULL;
+  BlobBase* infogain = NULL;
   if (bottom.size() < 3) {
     infogain = &infogain_;
   } else {
@@ -47,15 +47,15 @@ void InfogainLossLayer<Dtype,Mtype>::Reshape(
 
 
 template <typename Dtype, typename Mtype>
-void InfogainLossLayer<Dtype,Mtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-    const vector<Blob<Dtype>*>& top) {
-  const Dtype* bottom_data = bottom[0]->cpu_data();
-  const Dtype* bottom_label = bottom[1]->cpu_data();
+void InfogainLossLayer<Dtype,Mtype>::Forward_cpu(const vector<BlobBase*>& bottom,
+    const vector<BlobBase*>& top) {
+  const Dtype* bottom_data = bottom[0]->cpu_data<Dtype>();
+  const Dtype* bottom_label = bottom[1]->cpu_data<Dtype>();
   const Dtype* infogain_mat = NULL;
   if (bottom.size() < 3) {
     infogain_mat = infogain_.cpu_data();
   } else {
-    infogain_mat = bottom[2]->cpu_data();
+    infogain_mat = bottom[2]->cpu_data<Dtype>();
   }
   int num = bottom[0]->num();
   int dim = bottom[0]->count() / bottom[0]->num();
@@ -68,13 +68,13 @@ void InfogainLossLayer<Dtype,Mtype>::Forward_cpu(const vector<Blob<Dtype>*>& bot
       loss -= infogain_mat[label * dim + j] * log(prob);
     }
   }
-  top[0]->mutable_cpu_data()[0] = loss / num;
+  top[0]->mutable_cpu_data<Dtype>()[0] = loss / num;
 }
 
 template <typename Dtype, typename Mtype>
-void InfogainLossLayer<Dtype,Mtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
+void InfogainLossLayer<Dtype,Mtype>::Backward_cpu(const vector<BlobBase*>& top,
     const vector<bool>& propagate_down,
-    const vector<Blob<Dtype>*>& bottom) {
+    const vector<BlobBase*>& bottom) {
   if (propagate_down[1]) {
     LOG(FATAL) << this->type()
                << " Layer cannot backpropagate to label inputs.";
@@ -84,18 +84,18 @@ void InfogainLossLayer<Dtype,Mtype>::Backward_cpu(const vector<Blob<Dtype>*>& to
                << " Layer cannot backpropagate to infogain inputs.";
   }
   if (propagate_down[0]) {
-    const Dtype* bottom_data = bottom[0]->cpu_data();
-    const Dtype* bottom_label = bottom[1]->cpu_data();
+    const Dtype* bottom_data = bottom[0]->cpu_data<Dtype>();
+    const Dtype* bottom_label = bottom[1]->cpu_data<Dtype>();
     const Dtype* infogain_mat = NULL;
     if (bottom.size() < 3) {
       infogain_mat = infogain_.cpu_data();
     } else {
-      infogain_mat = bottom[2]->cpu_data();
+      infogain_mat = bottom[2]->cpu_data<Dtype>();
     }
-    Dtype* bottom_diff = bottom[0]->mutable_cpu_diff();
+    Dtype* bottom_diff = bottom[0]->mutable_cpu_diff<Dtype>();
     int num = bottom[0]->num();
     int dim = bottom[0]->count() / bottom[0]->num();
-    const Mtype scale = - top[0]->cpu_diff()[0] / num ;
+    const Mtype scale = - top[0]->cpu_diff<Dtype>()[0] / num ;
     for (int i = 0; i < num; ++i) {
       const int label = static_cast<int>(bottom_label[i]);
       for (int j = 0; j < dim; ++j) {

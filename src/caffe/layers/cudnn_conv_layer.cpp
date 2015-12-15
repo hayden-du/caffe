@@ -17,7 +17,7 @@ namespace caffe {
  */
 template <typename Dtype, typename Mtype>
 void CuDNNConvolutionLayer<Dtype,Mtype>::LayerSetUp(
-    const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
+    const vector<BlobBase*>& bottom, const vector<BlobBase*>& top) {
   ConvolutionLayer<Dtype,Mtype>::LayerSetUp(bottom, top);
 
   // Initialize algorithm arrays
@@ -88,7 +88,7 @@ void CuDNNConvolutionLayer<Dtype,Mtype>::LayerSetUp(
 
 template <typename Dtype, typename Mtype>
 void CuDNNConvolutionLayer<Dtype,Mtype>::Reshape(
-    const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
+    const vector<BlobBase*>& bottom, const vector<BlobBase*>& top) {
   ConvolutionLayer<Dtype,Mtype>::Reshape(bottom, top);
   CHECK_EQ(2, this->num_spatial_axes_)
       << "CuDNNConvolution input must have 2 spatial axes "

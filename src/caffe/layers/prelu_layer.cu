@@ -39,10 +39,10 @@ __global__ void PReLUParamBackward(const int n, const Dtype* in_diff,
 }
 
 template <typename Dtype, typename Mtype>
-void PReLULayer<Dtype,Mtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
-    const vector<Blob<Dtype>*>& top) {
-  const Dtype* bottom_data = bottom[0]->gpu_data();
-  Dtype* top_data = top[0]->mutable_gpu_data();
+void PReLULayer<Dtype,Mtype>::Forward_gpu(const vector<BlobBase*>& bottom,
+    const vector<BlobBase*>& top) {
+  const Dtype* bottom_data = bottom[0]->gpu_data<Dtype>();
+  Dtype* top_data = top[0]->mutable_gpu_data<Dtype>();
   const int count = bottom[0]->count();
   const int dim = bottom[0]->count(2);
   const int channels = bottom[0]->channels();
@@ -61,11 +61,11 @@ void PReLULayer<Dtype,Mtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
 }
 
 template <typename Dtype, typename Mtype>
-void PReLULayer<Dtype,Mtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
+void PReLULayer<Dtype,Mtype>::Backward_gpu(const vector<BlobBase*>& top,
     const vector<bool>& propagate_down,
-    const vector<Blob<Dtype>*>& bottom) {
-  const Dtype* bottom_data = bottom[0]->gpu_data();
-  const Dtype* top_diff = top[0]->gpu_diff();
+    const vector<BlobBase*>& bottom) {
+  const Dtype* bottom_data = bottom[0]->gpu_data<Dtype>();
+  const Dtype* top_diff = top[0]->gpu_diff<Dtype>();
   const int count = bottom[0]->count();
   const int dim = bottom[0]->count(2);
   const int channels = bottom[0]->channels();
@@ -111,7 +111,7 @@ void PReLULayer<Dtype,Mtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
   }
   // Propagate to bottom
   if (propagate_down[0]) {
-    Dtype* bottom_diff = bottom[0]->mutable_gpu_diff();
+    Dtype* bottom_diff = bottom[0]->mutable_gpu_diff<Dtype>();
     const Dtype* slope_data = this->blobs_[0]->gpu_data();
     int div_factor = channel_shared_ ? channels : 1;
     // NOLINT_NEXT_LINE(whitespace/operators)

@@ -8,8 +8,8 @@
 namespace caffe {
 
 template <typename Dtype, typename Mtype>
-void MVNLayer<Dtype,Mtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+void MVNLayer<Dtype,Mtype>::Reshape(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top) {
   top[0]->Reshape(bottom[0]->num(), bottom[0]->channels(),
       bottom[0]->height(), bottom[0]->width());
   mean_.Reshape(bottom[0]->num(), bottom[0]->channels(),
@@ -30,10 +30,10 @@ void MVNLayer<Dtype,Mtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
 }
 
 template <typename Dtype, typename Mtype>
-void MVNLayer<Dtype,Mtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-    const vector<Blob<Dtype>*>& top) {
-  const Dtype* bottom_data = bottom[0]->cpu_data();
-  Dtype* top_data = top[0]->mutable_cpu_data();
+void MVNLayer<Dtype,Mtype>::Forward_cpu(const vector<BlobBase*>& bottom,
+    const vector<BlobBase*>& top) {
+  const Dtype* bottom_data = bottom[0]->cpu_data<Dtype>();
+  Dtype* top_data = top[0]->mutable_cpu_data<Dtype>();
   int num;
   if (this->layer_param_.mvn_param().across_channels())
     num = bottom[0]->num();
@@ -91,13 +91,13 @@ void MVNLayer<Dtype,Mtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 }
 
 template <typename Dtype, typename Mtype>
-void MVNLayer<Dtype,Mtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
+void MVNLayer<Dtype,Mtype>::Backward_cpu(const vector<BlobBase*>& top,
     const vector<bool>& propagate_down,
-    const vector<Blob<Dtype>*>& bottom) {
-  const Dtype* top_diff = top[0]->cpu_diff();
-  const Dtype* top_data = top[0]->cpu_data();
-  const Dtype* bottom_data = bottom[0]->cpu_data();
-  Dtype* bottom_diff = bottom[0]->mutable_cpu_diff();
+    const vector<BlobBase*>& bottom) {
+  const Dtype* top_diff = top[0]->cpu_diff<Dtype>();
+  const Dtype* top_data = top[0]->cpu_data<Dtype>();
+  const Dtype* bottom_data = bottom[0]->cpu_data<Dtype>();
+  Dtype* bottom_diff = bottom[0]->mutable_cpu_diff<Dtype>();
 
   int num;
   if (this->layer_param_.mvn_param().across_channels())

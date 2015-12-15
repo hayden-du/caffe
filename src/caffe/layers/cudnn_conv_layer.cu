@@ -21,11 +21,11 @@ namespace caffe {
 
 template <typename Dtype, typename Mtype>
 void CuDNNConvolutionLayer<Dtype,Mtype>::Forward_gpu(
-    const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
+    const vector<BlobBase*>& bottom, const vector<BlobBase*>& top) {
     const Dtype* weight = this->blobs_[0]->gpu_data();
     for (int i = 0; i < bottom.size(); ++i) {
-      const Dtype* bottom_data = bottom[i]->gpu_data();
-      Dtype* top_data = top[i]->mutable_gpu_data();
+      const Dtype* bottom_data = bottom[i]->gpu_data<Dtype>();
+      Dtype* top_data = top[i]->mutable_gpu_data<Dtype>();
 
 
       // Forward through cuDNN in parallel over groups.
@@ -80,8 +80,8 @@ void CuDNNConvolutionLayer<Dtype,Mtype>::Forward_gpu(
 
 
 template <typename Dtype, typename Mtype>
-void CuDNNConvolutionLayer<Dtype,Mtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
-    const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
+void CuDNNConvolutionLayer<Dtype,Mtype>::Backward_gpu(const vector<BlobBase*>& top,
+    const vector<bool>& propagate_down, const vector<BlobBase*>& bottom) {
     const Dtype* weight = NULL;
     Dtype* weight_diff = NULL;
 
@@ -98,7 +98,7 @@ void CuDNNConvolutionLayer<Dtype,Mtype>::Backward_gpu(const vector<Blob<Dtype>*>
     }
 
     for (int i = 0; i < top.size(); ++i) {
-      const Dtype* top_diff = top[i]->gpu_diff();
+      const Dtype* top_diff = top[i]->gpu_diff<Dtype>();
 
       // Backward through cuDNN in parallel over groups and gradients.
       for (int g = 0; g < this->group_; g++) {
@@ -117,7 +117,7 @@ void CuDNNConvolutionLayer<Dtype,Mtype>::Backward_gpu(const vector<Blob<Dtype>*>
         if (this->param_propagate_down_[0]) {
           gpu_memory::allocate(&workspaceData,
                                workspace_bwd_filter_sizes_[i]);
-          const Dtype* bottom_data = bottom[i]->gpu_data();
+          const Dtype* bottom_data = bottom[i]->gpu_data<Dtype>();
           CUDNN_CHECK(cudnnConvBwdFilter(Caffe::cudnn_handle(),
                                          cudnn::dataType<Dtype>::one,
                                          bottom_descs_[i],
@@ -140,7 +140,7 @@ void CuDNNConvolutionLayer<Dtype,Mtype>::Backward_gpu(const vector<Blob<Dtype>*>
           if (weight == NULL) {
             weight = this->blobs_[0]->gpu_data();
           }
-          Dtype* bottom_diff = bottom[i]->mutable_gpu_diff();
+          Dtype* bottom_diff = bottom[i]->mutable_gpu_diff<Dtype>();
           gpu_memory::allocate(&workspaceData,
                                workspace_bwd_data_sizes_[i]);
           CUDNN_CHECK(cudnnConvBwdData(Caffe::cudnn_handle(),

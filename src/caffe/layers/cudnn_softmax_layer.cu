@@ -12,14 +12,14 @@
 namespace caffe {
 
 template <typename Dtype, typename Mtype>
-void CuDNNSoftmaxLayer<Dtype,Mtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
-    const vector<Blob<Dtype>*>& top) {
+void CuDNNSoftmaxLayer<Dtype,Mtype>::Forward_gpu(const vector<BlobBase*>& bottom,
+    const vector<BlobBase*>& top) {
     SoftmaxLayer<Dtype,Mtype>::Forward_gpu(bottom, top);
 }
 
 template <typename Dtype, typename Mtype>
-void CuDNNSoftmaxLayer<Dtype,Mtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
-    const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
+void CuDNNSoftmaxLayer<Dtype,Mtype>::Backward_gpu(const vector<BlobBase*>& top,
+    const vector<bool>& propagate_down, const vector<BlobBase*>& bottom) {
     SoftmaxLayer<Dtype,Mtype>::Backward_gpu(top, propagate_down, bottom);
 }
 

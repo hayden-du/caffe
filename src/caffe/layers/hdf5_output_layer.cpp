@@ -12,8 +12,8 @@
 namespace caffe {
 
 template <typename Dtype, typename Mtype>
-void HDF5OutputLayer<Dtype,Mtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-    const vector<Blob<Dtype>*>& top) {
+void HDF5OutputLayer<Dtype,Mtype>::LayerSetUp(const vector<BlobBase*>& bottom,
+    const vector<BlobBase*>& top) {
   file_name_ = this->layer_param_.hdf5_output_param().file_name();
   file_id_ = H5Fcreate(file_name_.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT,
                        H5P_DEFAULT);
@@ -41,8 +41,8 @@ void HDF5OutputLayer<Dtype,Mtype>::SaveBlobs() {
 }
 
 template <typename Dtype, typename Mtype>
-void HDF5OutputLayer<Dtype,Mtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+void HDF5OutputLayer<Dtype,Mtype>::Forward_cpu(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top) {
   CHECK_GE(bottom.size(), 2);
   CHECK_EQ(bottom[0]->num(), bottom[1]->num());
   data_blob_.Reshape(bottom[0]->num(), bottom[0]->channels(),
@@ -53,17 +53,17 @@ void HDF5OutputLayer<Dtype,Mtype>::Forward_cpu(const vector<Blob<Dtype>*>& botto
   const int label_datum_dim = bottom[1]->count() / bottom[1]->num();
 
   for (int i = 0; i < bottom[0]->num(); ++i) {
-    caffe_copy(data_datum_dim, &bottom[0]->cpu_data()[i * data_datum_dim],
+    caffe_copy(data_datum_dim, &bottom[0]->cpu_data<Dtype>()[i * data_datum_dim],
         &data_blob_.mutable_cpu_data()[i * data_datum_dim]);
-    caffe_copy(label_datum_dim, &bottom[1]->cpu_data()[i * label_datum_dim],
+    caffe_copy(label_datum_dim, &bottom[1]->cpu_data<Dtype>()[i * label_datum_dim],
         &label_blob_.mutable_cpu_data()[i * label_datum_dim]);
   }
   SaveBlobs();
 }
 
 template <typename Dtype, typename Mtype>
-void HDF5OutputLayer<Dtype,Mtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
+void HDF5OutputLayer<Dtype,Mtype>::Backward_cpu(const vector<BlobBase*>& top,
+      const vector<bool>& propagate_down, const vector<BlobBase*>& bottom) {
   return;
 }
 

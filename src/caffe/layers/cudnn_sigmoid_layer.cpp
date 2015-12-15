@@ -8,8 +8,8 @@
 namespace caffe {
 
 template <typename Dtype, typename Mtype>
-void CuDNNSigmoidLayer<Dtype,Mtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+void CuDNNSigmoidLayer<Dtype,Mtype>::LayerSetUp(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top) {
   SigmoidLayer<Dtype,Mtype>::LayerSetUp(bottom, top);
   // initialize cuDNN
   cudnn::createTensor4dDesc<Dtype>(&bottom_desc_);
@@ -18,8 +18,8 @@ void CuDNNSigmoidLayer<Dtype,Mtype>::LayerSetUp(const vector<Blob<Dtype>*>& bott
 }
 
 template <typename Dtype, typename Mtype>
-void CuDNNSigmoidLayer<Dtype,Mtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+void CuDNNSigmoidLayer<Dtype,Mtype>::Reshape(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top) {
   SigmoidLayer<Dtype,Mtype>::Reshape(bottom, top);
   const int N = bottom[0]->num();
   const int K = bottom[0]->channels();

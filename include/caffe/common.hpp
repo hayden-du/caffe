@@ -70,32 +70,32 @@ private:\
 
 # define INSTANTIATE_LAYER_GPU_FORWARD_FF(classname) \
   template void classname<float16,CAFFE_FP16_MTYPE>::Forward_gpu( \
-      const std::vector<Blob<float16>*>& bottom, \
-      const std::vector<Blob<float16>*>& top)
+      const std::vector<BlobBase*>& bottom, \
+      const std::vector<BlobBase*>& top)
 
 # define INSTANTIATE_LAYER_GPU_BACKWARD_FF(classname) \
   template void classname<float16,CAFFE_FP16_MTYPE>::Backward_gpu( \
-      const std::vector<Blob<float16>*>& top, \
+      const std::vector<BlobBase*>& top, \
       const std::vector<bool>& propagate_down, \
-      const std::vector<Blob<float16>*>& bottom)
+      const std::vector<BlobBase*>& bottom)
 
 # define INSTANTIATE_LAYER_GPU_FORWARD(classname) \
   template void classname<float, float>::Forward_gpu( \
-      const std::vector<Blob<float>*>& bottom, \
-      const std::vector<Blob<float>*>& top); \
+      const std::vector<BlobBase*>& bottom, \
+      const std::vector<BlobBase*>& top); \
   template void classname<double, double>::Forward_gpu( \
-      const std::vector<Blob<double>*>& bottom, \
-      const std::vector<Blob<double>*>& top);
+      const std::vector<BlobBase*>& bottom, \
+      const std::vector<BlobBase*>& top);
 
 # define INSTANTIATE_LAYER_GPU_BACKWARD(classname) \
   template void classname<float, float>::Backward_gpu( \
-      const std::vector<Blob<float>*>& top, \
+      const std::vector<BlobBase*>& top, \
       const std::vector<bool>& propagate_down, \
-      const std::vector<Blob<float>*>& bottom); \
+      const std::vector<BlobBase*>& bottom); \
   template void classname<double, double>::Backward_gpu( \
-      const std::vector<Blob<double>*>& top, \
+      const std::vector<BlobBase*>& top, \
       const std::vector<bool>& propagate_down, \
-      const std::vector<Blob<double>*>& bottom)
+      const std::vector<BlobBase*>& bottom)
 
 
 #  define INSTANTIATE_CLASS(classname) \

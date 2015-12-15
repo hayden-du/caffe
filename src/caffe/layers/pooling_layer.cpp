@@ -14,8 +14,8 @@ using std::min;
 using std::max;
 
 template <typename Dtype, typename Mtype>
-void PoolingLayer<Dtype,Mtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+void PoolingLayer<Dtype,Mtype>::LayerSetUp(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top) {
   PoolingParameter pool_param = this->layer_param_.pooling_param();
   if (pool_param.global_pooling()) {
     CHECK(!(pool_param.has_kernel_size() ||
@@ -79,8 +79,8 @@ void PoolingLayer<Dtype,Mtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
 }
 
 template <typename Dtype, typename Mtype>
-void PoolingLayer<Dtype,Mtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+void PoolingLayer<Dtype,Mtype>::Reshape(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top) {
   CHECK_EQ(4, bottom[0]->num_axes()) << "Input must have 4 axes, "
       << "corresponding to (num, channels, height, width)";
   channels_ = bottom[0]->channels();
@@ -128,10 +128,10 @@ void PoolingLayer<Dtype,Mtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
 // TODO(Yangqing): Is there a faster way to do pooling in the channel-first
 // case?
 template <typename Dtype, typename Mtype>
-void PoolingLayer<Dtype,Mtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
-  const Dtype* bottom_data = bottom[0]->cpu_data();
-  Dtype* top_data = top[0]->mutable_cpu_data();
+void PoolingLayer<Dtype,Mtype>::Forward_cpu(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top) {
+  const Dtype* bottom_data = bottom[0]->cpu_data<Dtype>();
+  Dtype* top_data = top[0]->mutable_cpu_data<Dtype>();
   const int top_count = top[0]->count();
   // We'll output the mask to top[1] if it's of size >1.
   const bool use_top_mask = top.size() > 1;
@@ -143,7 +143,7 @@ void PoolingLayer<Dtype,Mtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   case PoolingParameter_PoolMethod_MAX:
     // Initialize
     if (use_top_mask) {
-      top_mask = top[1]->mutable_cpu_data();
+      top_mask = top[1]->mutable_cpu_data<Dtype>();
       caffe_set(top_count, typedConsts<Dtype>::minus_one, top_mask);
     } else {
       mask = max_idx_.mutable_cpu_data();
@@ -231,13 +231,13 @@ void PoolingLayer<Dtype,Mtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 }
 
 template <typename Dtype, typename Mtype>
-void PoolingLayer<Dtype,Mtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
+void PoolingLayer<Dtype,Mtype>::Backward_cpu(const vector<BlobBase*>& top,
+      const vector<bool>& propagate_down, const vector<BlobBase*>& bottom) {
   if (!propagate_down[0]) {
     return;
   }
-  const Dtype* top_diff = top[0]->cpu_diff();
-  Dtype* bottom_diff = bottom[0]->mutable_cpu_diff();
+  const Dtype* top_diff = top[0]->cpu_diff<Dtype>();
+  Dtype* bottom_diff = bottom[0]->mutable_cpu_diff<Dtype>();
   // Different pooling methods. We explicitly do the switch outside the for
   // loop to save time, although this results in more codes.
   caffe_set(bottom[0]->count(), typedConsts<Dtype>::zero, bottom_diff);
@@ -249,7 +249,7 @@ void PoolingLayer<Dtype,Mtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
   case PoolingParameter_PoolMethod_MAX:
     // The main loop
     if (use_top_mask) {
-      top_mask = top[1]->cpu_data();
+      top_mask = top[1]->cpu_data<Dtype>();
     } else {
       mask = max_idx_.cpu_data();
     }

@@ -8,11 +8,11 @@
 namespace caffe {
 
 template <typename Dtype, typename Mtype>
-void ExpLayer<Dtype,Mtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
-    const vector<Blob<Dtype>*>& top) {
+void ExpLayer<Dtype,Mtype>::Forward_gpu(const vector<BlobBase*>& bottom,
+    const vector<BlobBase*>& top) {
   const int count = bottom[0]->count();
-  const Dtype* bottom_data = bottom[0]->gpu_data();
-  Dtype* top_data = top[0]->mutable_gpu_data();
+  const Dtype* bottom_data = bottom[0]->gpu_data<Dtype>();
+  Dtype* top_data = top[0]->mutable_gpu_data<Dtype>();
   if (inner_scale_ == Mtype(1)) {
     caffe_gpu_exp<Dtype,Mtype>(count, bottom_data, top_data);
   } else {
@@ -25,13 +25,13 @@ void ExpLayer<Dtype,Mtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
 }
 
 template <typename Dtype, typename Mtype>
-void ExpLayer<Dtype,Mtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
-    const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
+void ExpLayer<Dtype,Mtype>::Backward_gpu(const vector<BlobBase*>& top,
+    const vector<bool>& propagate_down, const vector<BlobBase*>& bottom) {
   if (!propagate_down[0]) { return; }
   const int count = bottom[0]->count();
-  const Dtype* top_data = top[0]->gpu_data();
-  const Dtype* top_diff = top[0]->gpu_diff();
-  Dtype* bottom_diff = bottom[0]->mutable_gpu_diff();
+  const Dtype* top_data = top[0]->gpu_data<Dtype>();
+  const Dtype* top_diff = top[0]->gpu_diff<Dtype>();
+  Dtype* bottom_diff = bottom[0]->mutable_gpu_diff<Dtype>();
   caffe_gpu_mul<Dtype,Mtype>(count, top_data, top_diff, bottom_diff);
   if (inner_scale_ != Mtype(1)) {
     caffe_gpu_scal<Dtype,Mtype>(count, inner_scale_, bottom_diff);
