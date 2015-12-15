@@ -1037,7 +1037,6 @@ TYPED_TEST(NetTest, TestComboLossWeight) {
 
 TYPED_TEST(NetTest, TestBackwardWithAccuracyLayer) {
   typedef typename TypeParam::Dtype Dtype;
-  typedef typename TypeParam::Mtype Mtype;
   const bool kForceBackward = false;
   const bool kAccuracyLayer = true;
   this->InitTinyNet(kForceBackward, kAccuracyLayer);
@@ -1209,7 +1208,6 @@ TYPED_TEST(NetTest, TestSharedWeightsUpdate) {
 
 TYPED_TEST(NetTest, TestSharedWeightsResume) {
   typedef typename TypeParam::Dtype Dtype;
-  typedef typename TypeParam::Mtype Mtype;
 
   // Create a net with weight sharing; Update it once.
   Caffe::set_random_seed(this->seed_);
