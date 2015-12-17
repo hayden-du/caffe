@@ -7,7 +7,7 @@
 
 namespace caffe {
 
-template <typename Dtype, typename Mtype>
+template <typename Dtype>
 inline Dtype sigmoid(Dtype x) {
   return 1. / (1. + exp(-x));
 }
@@ -19,7 +19,7 @@ void SigmoidLayer<Dtype,Mtype>::Forward_cpu(const vector<BlobBase*>& bottom,
   Dtype* top_data = top[0]->mutable_cpu_data<Dtype>();
   const int count = bottom[0]->count();
   for (int i = 0; i < count; ++i) {
-    top_data[i] = sigmoid<Dtype,Mtype>(bottom_data[i]);
+    top_data[i] = sigmoid(bottom_data[i]);
   }
 }
 

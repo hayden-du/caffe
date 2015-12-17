@@ -374,7 +374,7 @@ void Solver<Dtype,Mtype>::Test(const int test_net_id) {
     }
 
     Mtype iter_loss;
-    const vector<BlobBase*>& result =
+    const vector<Blob<Dtype>*>& result =
         test_net->Forward(bottom_vec, &iter_loss);
     if (param_.test_compute_loss()) {
       loss += iter_loss;

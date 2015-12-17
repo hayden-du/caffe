@@ -36,7 +36,7 @@ class Net {
    *
    * You can get the input blobs using input_blobs().
    */
-  const vector<BlobBase*>& ForwardPrefilled(Mtype* loss = NULL);
+  const vector<Blob<Dtype>*>& ForwardPrefilled(Mtype* loss = NULL);
 
   /**
    * The From and To variants of Forward and Backward operate on the
@@ -50,7 +50,7 @@ class Net {
   Mtype ForwardFrom(int start);
   Mtype ForwardTo(int end);
   /// @brief Run forward using a set of bottom blobs, and return the result.
-  const vector<BlobBase*>& Forward(const vector<Blob<Dtype>* > & bottom,
+  const vector<Blob<Dtype>*>& Forward(const vector<Blob<Dtype>* > & bottom,
       Mtype* loss = NULL);
   /**
    * @brief Run forward using a serialized BlobProtoVector and return the

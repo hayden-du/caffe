@@ -320,7 +320,7 @@ int time() {
   LOG(INFO) << "Performing Backward";
   caffe_net.Backward();
 
-  const vector<shared_ptr<Layer<float,float> > >& layers = caffe_net.layers();
+  const vector<shared_ptr<LayerBase> >& layers = caffe_net.layers();
   const vector<vector<Blob<float>*> >& bottom_vecs = caffe_net.bottom_vecs();
   const vector<vector<Blob<float>*> >& top_vecs = caffe_net.top_vecs();
   const vector<vector<bool> >& bottom_need_backward =  caffe_net.bottom_need_backward();

@@ -131,8 +131,8 @@ inline shared_ptr<LayerBase> InstantiateLayer(const LayerParameter& param) {
     ptr = new LayerType<float,float>(param);
   }
 #ifndef CPU_ONLY
-  else if (dprec == 32 && mprec == 16) {
-    ptr = new LayerType<float,float16>(param);
+  else if (dprec == 16 && mprec == 32) {
+    ptr = new LayerType<float16,float>(param);
   } else if (dprec == 16 && mprec == 16) {
     ptr = new LayerType<float16,float16>(param);
   }

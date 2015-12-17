@@ -614,7 +614,7 @@ Mtype Net<Dtype,Mtype>::ForwardTo(int end) {
 }
 
 template <typename Dtype, typename Mtype>
-const vector<BlobBase*>& Net<Dtype,Mtype>::ForwardPrefilled(Mtype* loss) {
+const vector<Blob<Dtype>*>& Net<Dtype,Mtype>::ForwardPrefilled(Mtype* loss) {
   if (loss != NULL) {
     *loss = ForwardFromTo(0, layers_.size() - 1);
   } else {
@@ -624,7 +624,7 @@ const vector<BlobBase*>& Net<Dtype,Mtype>::ForwardPrefilled(Mtype* loss) {
 }
 
 template <typename Dtype, typename Mtype>
-const vector<BlobBase*>& Net<Dtype,Mtype>::Forward(
+const vector<Blob<Dtype>*>& Net<Dtype,Mtype>::Forward(
     const vector<Blob<Dtype>*> & bottom, Mtype* loss) {
   // Copy bottom to internal bottom
   for (int i = 0; i < bottom.size(); ++i) {
