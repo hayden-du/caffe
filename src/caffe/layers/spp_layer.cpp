@@ -106,12 +106,12 @@ void SPPLayer<Dtype,Mtype>::LayerSetUp(const vector<BlobBase*>& bottom,
 
   for (int i = 0; i < pyramid_height_; i++) {
     // pooling layer input holders setup
-    pooling_bottom_vecs_.push_back(new vector<Blob<Dtype>*>);
+    pooling_bottom_vecs_.push_back(new vector<BlobBase*>);
     pooling_bottom_vecs_[i]->push_back(split_top_vec_[i]);
 
     // pooling layer output holders setup
     pooling_outputs_.push_back(new Blob<Dtype>());
-    pooling_top_vecs_.push_back(new vector<Blob<Dtype>*>);
+    pooling_top_vecs_.push_back(new vector<BlobBase*>);
     pooling_top_vecs_[i]->push_back(pooling_outputs_[i]);
 
     // pooling layer setup
@@ -124,7 +124,7 @@ void SPPLayer<Dtype,Mtype>::LayerSetUp(const vector<BlobBase*>& bottom,
 
     // flatten layer output holders setup
     flatten_outputs_.push_back(new Blob<Dtype>());
-    flatten_top_vecs_.push_back(new vector<Blob<Dtype>*>);
+    flatten_top_vecs_.push_back(new vector<BlobBase*>);
     flatten_top_vecs_[i]->push_back(flatten_outputs_[i]);
 
     // flatten layer setup

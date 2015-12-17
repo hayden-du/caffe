@@ -126,7 +126,7 @@ void Net<Dtype,Mtype>::Init(const NetParameter& in_param) {
     // If the layer specifies that AutoTopBlobs() -> true and the LayerParameter
     // specified fewer than the required number (as specified by
     // ExactNumTopBlobs() or MinTopBlobs()), allocate them here.
-    Layer<Dtype,Mtype>* layer = layers_[layer_id].get();
+    LayerBase* layer = layers_[layer_id].get();
     if (layer->AutoTopBlobs()) {
       const int needed_num_top =
           std::max(layer->MinTopBlobs(), layer->ExactNumTopBlobs());
@@ -140,8 +140,8 @@ void Net<Dtype,Mtype>::Init(const NetParameter& in_param) {
     // After this layer is connected, set it up.
     if (share_from_root) {
       // Set up size of top blobs using root_net_
-      const vector<Blob<Dtype>*>& base_top = root_net_->top_vecs_[layer_id];
-      const vector<Blob<Dtype>*>& this_top = this->top_vecs_[layer_id];
+      const vector<BlobBase*>& base_top = root_net_->top_vecs_[layer_id];
+      const vector<BlobBase*>& this_top = this->top_vecs_[layer_id];
       for (int top_id = 0; top_id < base_top.size(); ++top_id) {
         this_top[top_id]->ReshapeLike(*base_top[top_id]);
         LOG(INFO) << "Created top blob " << top_id << " (shape: "
@@ -158,14 +158,14 @@ void Net<Dtype,Mtype>::Init(const NetParameter& in_param) {
       if (blob_loss_weights_.size() <= top_id_vecs_[layer_id][top_id]) {
         blob_loss_weights_.resize(top_id_vecs_[layer_id][top_id] + 1, 0);
       }
-      blob_loss_weights_[top_id_vecs_[layer_id][top_id]] = layer->loss(top_id);
+      blob_loss_weights_[top_id_vecs_[layer_id][top_id]] = layer->loss<Dtype>(top_id);
       if (Caffe::root_solver()) {
         LOG(INFO) << "Top shape: "
                   << top_vecs_[layer_id][top_id]->shape_string();
       }
-      if (layer->loss(top_id) != 0.) {
+      if (layer->loss<Dtype>(top_id) != 0.) {
         if (Caffe::root_solver()) {
-          LOG(INFO) << "    with loss weight " << layer->loss(top_id);
+          LOG(INFO) << "    with loss weight " << layer->loss<Dtype>(top_id);
         }
       }
       memory_used_ += top_vecs_[layer_id][top_id]->count();
@@ -211,7 +211,7 @@ void Net<Dtype,Mtype>::Init(const NetParameter& in_param) {
     bool layer_skip_propagate_down = true;
     for (int top_id = 0; top_id < top_vecs_[layer_id].size(); ++top_id) {
       const string& blob_name = blob_names_[top_id_vecs_[layer_id][top_id]];
-      if (layers_[layer_id]->loss(top_id) != 0. ||
+      if (layers_[layer_id]->loss<Dtype>(top_id) != 0. ||
           (blobs_under_loss.find(blob_name) != blobs_under_loss.end())) {
         layer_contributes_loss = true;
       }
@@ -538,8 +538,8 @@ void Net<Dtype,Mtype>::AppendParam(const NetParameter& param, const int layer_id
         << "' owned by "
         << "layer '" << layer_names_[owner_layer_id] << "', param "
         << "index " << owner_param_id;
-    Blob<Dtype>* this_blob = layers_[layer_id]->blobs()[param_id].get();
-    Blob<Dtype>* owner_blob =
+    BlobBase* this_blob = layers_[layer_id]->blobs()[param_id].get();
+    BlobBase* owner_blob =
         layers_[owner_layer_id]->blobs()[owner_param_id].get();
     const int param_size = layer_param.param_size();
     if (param_size > param_id && (layer_param.param(param_id).share_mode() ==
@@ -614,7 +614,7 @@ Mtype Net<Dtype,Mtype>::ForwardTo(int end) {
 }
 
 template <typename Dtype, typename Mtype>
-const vector<Blob<Dtype>*>& Net<Dtype,Mtype>::ForwardPrefilled(Mtype* loss) {
+const vector<BlobBase*>& Net<Dtype,Mtype>::ForwardPrefilled(Mtype* loss) {
   if (loss != NULL) {
     *loss = ForwardFromTo(0, layers_.size() - 1);
   } else {
@@ -624,7 +624,7 @@ const vector<Blob<Dtype>*>& Net<Dtype,Mtype>::ForwardPrefilled(Mtype* loss) {
 }
 
 template <typename Dtype, typename Mtype>
-const vector<Blob<Dtype>*>& Net<Dtype,Mtype>::Forward(
+const vector<BlobBase*>& Net<Dtype,Mtype>::Forward(
     const vector<Blob<Dtype>*> & bottom, Mtype* loss) {
   // Copy bottom to internal bottom
   for (int i = 0; i < bottom.size(); ++i) {
@@ -671,7 +671,7 @@ template <typename Dtype, typename Mtype>
 void Net<Dtype,Mtype>::InputDebugInfo(const int input_id) {
   const Blob<Dtype>& blob = *net_input_blobs_[input_id];
   const string& blob_name = blob_names_[net_input_blob_indices_[input_id]];
-  const double data_abs_val_mean = blob.asum_data<Dtype,Mtype>() / blob.count();
+  const double data_abs_val_mean = blob.template asum_data<Dtype,Mtype>() / blob.count();
   if (Caffe::root_solver()) {
     LOG(INFO) << "    [Forward] "
               << "Input " << blob_name << " data: " << data_abs_val_mean;
@@ -681,9 +681,9 @@ void Net<Dtype,Mtype>::InputDebugInfo(const int input_id) {
 template <typename Dtype, typename Mtype>
 void Net<Dtype,Mtype>::ForwardDebugInfo(const int layer_id) {
   for (int top_id = 0; top_id < top_vecs_[layer_id].size(); ++top_id) {
-    const Blob<Dtype>& blob = *top_vecs_[layer_id][top_id];
+    const BlobBase& blob = *top_vecs_[layer_id][top_id];
     const string& blob_name = blob_names_[top_id_vecs_[layer_id][top_id]];
-    const double data_abs_val_mean = blob.asum_data<Dtype,Mtype>() / blob.count();
+    const double data_abs_val_mean = blob.template asum_data<Dtype,Mtype>() / blob.count();
     if (Caffe::root_solver()) {
       LOG(INFO) << "    [Forward] "
                 << "Layer " << layer_names_[layer_id]
@@ -693,10 +693,10 @@ void Net<Dtype,Mtype>::ForwardDebugInfo(const int layer_id) {
   }
   for (int param_id = 0; param_id < layers_[layer_id]->blobs().size();
        ++param_id) {
-    const Blob<Dtype>& blob = *layers_[layer_id]->blobs()[param_id];
+    const BlobBase& blob = *layers_[layer_id]->blobs()[param_id];
     const int net_param_id = param_id_vecs_[layer_id][param_id];
     const string& blob_name = param_display_names_[net_param_id];
-    const double data_abs_val_mean = blob.asum_data<Dtype,Mtype>() / blob.count();
+    const double data_abs_val_mean = blob.template asum_data<Dtype,Mtype>() / blob.count();
     if (Caffe::root_solver()) {
       LOG(INFO) << "    [Forward] "
                 << "Layer " << layer_names_[layer_id]
@@ -708,12 +708,12 @@ void Net<Dtype,Mtype>::ForwardDebugInfo(const int layer_id) {
 
 template <typename Dtype, typename Mtype>
 void Net<Dtype,Mtype>::BackwardDebugInfo(const int layer_id) {
-  const vector<Blob<Dtype>*>& bottom_vec = bottom_vecs_[layer_id];
+  const vector<BlobBase*>& bottom_vec = bottom_vecs_[layer_id];
   for (int bottom_id = 0; bottom_id < bottom_vec.size(); ++bottom_id) {
     if (!bottom_need_backward_[layer_id][bottom_id]) { continue; }
-    const Blob<Dtype>& blob = *bottom_vec[bottom_id];
+    const BlobBase& blob = *bottom_vec[bottom_id];
     const string& blob_name = blob_names_[bottom_id_vecs_[layer_id][bottom_id]];
-    const double diff_abs_val_mean = blob.asum_diff<Dtype,Mtype>() / blob.count();
+    const double diff_abs_val_mean = blob.template asum_diff<Dtype,Mtype>() / blob.count();
     if (Caffe::root_solver()) {
       LOG(INFO) << "    [Backward] "
                 << "Layer " << layer_names_[layer_id]
@@ -724,8 +724,8 @@ void Net<Dtype,Mtype>::BackwardDebugInfo(const int layer_id) {
   for (int param_id = 0; param_id < layers_[layer_id]->blobs().size();
        ++param_id) {
     if (!layers_[layer_id]->param_propagate_down(param_id)) { continue; }
-    const Blob<Dtype>& blob = *layers_[layer_id]->blobs()[param_id];
-    double diff_abs_val_mean = blob.asum_diff<Dtype,Mtype>() / blob.count();
+    const BlobBase& blob = *layers_[layer_id]->blobs()[param_id];
+    double diff_abs_val_mean = blob.template asum_diff<Dtype,Mtype>() / blob.count();
     if (Caffe::root_solver()) {
       LOG(INFO) << "    [Backward] "
                 << "Layer " << layer_names_[layer_id]
@@ -737,13 +737,13 @@ void Net<Dtype,Mtype>::BackwardDebugInfo(const int layer_id) {
 
 template <typename Dtype, typename Mtype>
 void Net<Dtype,Mtype>::UpdateDebugInfo(const int param_id) {
-  const Blob<Dtype>& blob = *params_[param_id];
+  const BlobBase& blob = *params_[param_id];
   const int param_owner = param_owners_[param_id];
   const string& layer_name = layer_names_[param_layer_indices_[param_id].first];
   const string& param_display_name = param_display_names_[param_id];
-  const double diff_abs_val_mean = blob.asum_diff<Dtype,Mtype>() / blob.count();
+  const double diff_abs_val_mean = blob.template asum_diff<Dtype,Mtype>() / blob.count();
   if (param_owner < 0) {
-    double data_abs_val_mean = blob.asum_data<Dtype,Mtype>() / blob.count();
+    double data_abs_val_mean = blob.template asum_data<Dtype,Mtype>() / blob.count();
     if (Caffe::root_solver()) {
       LOG(INFO) << "    [Update] Layer " << layer_name
                 << ", param " << param_display_name
@@ -767,7 +767,7 @@ template <typename Dtype, typename Mtype>
 void Net<Dtype,Mtype>::ShareTrainedLayersWith(const Net* other) {
   int num_source_layers = other->layers().size();
   for (int i = 0; i < num_source_layers; ++i) {
-    Layer<Dtype,Mtype>* source_layer = other->layers()[i].get();
+    LayerBase* source_layer = other->layers()[i].get();
     const string& source_layer_name = other->layer_names()[i];
     int target_layer_id = 0;
     while (target_layer_id != layer_names_.size() &&
@@ -779,12 +779,12 @@ void Net<Dtype,Mtype>::ShareTrainedLayersWith(const Net* other) {
       continue;
     }
     DLOG(INFO) << "Copying source layer " << source_layer_name;
-    vector<shared_ptr<Blob<Dtype> > >& target_blobs =
+    vector<shared_ptr<BlobBase> >& target_blobs =
         layers_[target_layer_id]->blobs();
     CHECK_EQ(target_blobs.size(), source_layer->blobs().size())
         << "Incompatible number of blobs for layer " << source_layer_name;
     for (int j = 0; j < target_blobs.size(); ++j) {
-      Blob<Dtype>* source_blob = source_layer->blobs()[j].get();
+      BlobBase* source_blob = source_layer->blobs()[j].get();
       CHECK(target_blobs[j]->shape() == source_blob->shape())
           << "Cannot share param " << j << " weights from layer '"
           << source_layer_name << "'; shape mismatch.  Source param shape is "
@@ -812,10 +812,10 @@ void Net<Dtype,Mtype>::Backward() {
     Mtype asum_data = 0, asum_diff = 0,
       sumsq_data = 0, sumsq_diff = 0;
     for (int i = 0; i < learnable_params_.size(); ++i) {
-      asum_data += learnable_params_[i]->asum_data<Dtype,Mtype>();
-      asum_diff += learnable_params_[i]->asum_diff<Dtype,Mtype>();
-      sumsq_data += learnable_params_[i]->sumsq_data<Dtype,Mtype>();
-      sumsq_diff += learnable_params_[i]->sumsq_diff<Dtype,Mtype>();
+      asum_data += learnable_params_[i]->template asum_data<Dtype,Mtype>();
+      asum_diff += learnable_params_[i]->template asum_diff<Dtype,Mtype>();
+      sumsq_data += learnable_params_[i]->template sumsq_data<Dtype,Mtype>();
+      sumsq_diff += learnable_params_[i]->template sumsq_diff<Dtype,Mtype>();
     }
     const double l2norm_data = sqrt(sumsq_data);
     const double l2norm_diff = sqrt(sumsq_diff);
@@ -848,7 +848,7 @@ void Net<Dtype,Mtype>::CopyTrainedLayersFrom(const NetParameter& param) {
       continue;
     }
     DLOG(INFO) << "Copying source layer " << source_layer_name;
-    vector<shared_ptr<Blob<Dtype> > >& target_blobs =
+    vector<shared_ptr<BlobBase> >& target_blobs =
         layers_[target_layer_id]->blobs();
     CHECK_EQ(target_blobs.size(), source_layer.blobs_size())
         << "Incompatible number of blobs for layer " << source_layer_name;
@@ -904,7 +904,7 @@ void Net<Dtype,Mtype>::CopyTrainedLayersFromHDF5(const string trained_filename) 
     }
     int target_layer_id = layer_names_index_[source_layer_name];
     DLOG(INFO) << "Copying source layer " << source_layer_name;
-    vector<shared_ptr<Blob<Dtype> > >& target_blobs =
+    vector<shared_ptr<BlobBase> >& target_blobs =
         layers_[target_layer_id]->blobs();
     hid_t layer_hid = H5Gopen2(data_hid, source_layer_name.c_str(),
         H5P_DEFAULT);
@@ -930,7 +930,7 @@ void Net<Dtype,Mtype>::CopyTrainedLayersFromHDF5(const string trained_filename) 
         }
       }
       hdf5_load_nd_dataset(layer_hid, dataset_name.c_str(), 0, kMaxBlobAxes,
-          target_blobs[j].get());
+          target_blobs[j]->instance<Dtype>());
     }
     H5Gclose(layer_hid);
   }
@@ -990,12 +990,12 @@ void Net<Dtype,Mtype>::ToHDF5(const string& filename, bool write_diff) const {
       if (param_owners_[net_param_id] == -1) {
         // Only save params that own themselves
         hdf5_save_nd_dataset(layer_data_hid, dataset_name.str(),
-            *params_[net_param_id]);
+            *params_[net_param_id]->instance<Dtype>());
       }
       if (write_diff) {
         // Write diffs regardless of weight-sharing
         hdf5_save_nd_dataset(layer_diff_hid, dataset_name.str(),
-            *params_[net_param_id], true);
+            *params_[net_param_id]->instance<Dtype>(), true);
       }
     }
     H5Gclose(layer_data_hid);
@@ -1013,23 +1013,23 @@ void Net<Dtype,Mtype>::ToHDF5(const string& filename, bool write_diff) const {
 template <typename Dtype, typename Mtype>
 void Net<Dtype,Mtype>::Update() {
   for (int i = 0; i < learnable_params_.size(); ++i) {
-    learnable_params_[i]->Update<Dtype,Mtype>();
+    learnable_params_[i]->template Update<Dtype,Mtype>();
   }
 }
 
 template <typename Dtype, typename Mtype>
 void Net<Dtype,Mtype>::ClearParamDiffs() {
   for (int i = 0; i < learnable_params_.size(); ++i) {
-    Blob<Dtype>* blob = learnable_params_[i];
+    BlobBase* blob = learnable_params_[i];
     switch (Caffe::mode()) {
     case Caffe::CPU:
       caffe_set(blob->count(), typedConsts<Dtype>::zero,
-                blob->mutable_cpu_diff());
+                blob->mutable_cpu_diff<Dtype>());
       break;
     case Caffe::GPU:
 #ifndef CPU_ONLY
       caffe_gpu_set<Dtype,Mtype>(blob->count(), 0,
-                    blob->mutable_gpu_diff());
+                    blob->mutable_gpu_diff<Dtype>());
 #else
       NO_GPU;
 #endif
@@ -1053,13 +1053,12 @@ bool Net<Dtype,Mtype>::has_blob(const string& blob_name) const {
 }
 
 template <typename Dtype, typename Mtype>
-const shared_ptr<Blob<Dtype> > Net<Dtype,Mtype>::blob_by_name(
+const shared_ptr<BlobBase> Net<Dtype,Mtype>::blob_by_name(
     const string& blob_name) const {
-  shared_ptr<Blob<Dtype> > blob_ptr;
+  shared_ptr<BlobBase> blob_ptr;
   if (has_blob(blob_name)) {
     blob_ptr = blobs_[blob_names_index_.find(blob_name)->second];
   } else {
-    blob_ptr.reset((Blob<Dtype>*)(NULL));
     LOG(WARNING) << "Unknown blob name " << blob_name;
   }
   return blob_ptr;
@@ -1093,13 +1092,12 @@ bool Net<Dtype,Mtype>::has_layer(const string& layer_name) const {
 }
 
 template <typename Dtype, typename Mtype>
-const shared_ptr<Layer<Dtype,Mtype> > Net<Dtype,Mtype>::layer_by_name(
+const shared_ptr<LayerBase> Net<Dtype,Mtype>::layer_by_name(
     const string& layer_name) const {
-  shared_ptr<Layer<Dtype,Mtype> > layer_ptr;
+  shared_ptr<LayerBase> layer_ptr;
   if (has_layer(layer_name)) {
     layer_ptr = layers_[layer_names_index_.find(layer_name)->second];
   } else {
-    layer_ptr.reset((Layer<Dtype,Mtype>*)(NULL));
     LOG(WARNING) << "Unknown layer name " << layer_name;
   }
   return layer_ptr;

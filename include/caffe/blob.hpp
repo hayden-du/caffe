@@ -14,6 +14,8 @@ const int kMaxBlobAxes = 32;
 
 namespace caffe {
 
+template <typename Dtype> class Blob;
+
 /**
  * @brief A wrapper around SyncedMemory holders serving as the basic
  *        computational unit through which Layer%s, Net%s, and Solver%s
@@ -299,6 +301,15 @@ class BlobBase {
 
   bool ShapeEquals(const BlobProto& other);
 
+  virtual void FromProto(const BlobProto& proto, bool reshape = true) = 0;
+  virtual void ToProto(BlobProto* proto, bool write_diff = false) const = 0;
+
+  template <typename Dtype>
+  Blob<Dtype>* instance() {
+    CHECK(dtsize() == sizeof(Dtype));
+    return reinterpret_cast<Blob<Dtype>*>(this);
+  }
+
  protected:
   shared_ptr<SyncedMemory> data_;
   shared_ptr<SyncedMemory> diff_;
@@ -363,8 +374,8 @@ public:
     return cpu_diff()[offset(index)];
   }
 
-  void FromProto(const BlobProto& proto, bool reshape = true);
-  void ToProto(BlobProto* proto, bool write_diff = false) const;
+  virtual void FromProto(const BlobProto& proto, bool reshape = true);
+  virtual void ToProto(BlobProto* proto, bool write_diff = false) const;
 
   DISABLE_COPY_AND_ASSIGN(Blob);
 };

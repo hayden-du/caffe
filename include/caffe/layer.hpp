@@ -213,6 +213,52 @@ public:
   }
 
   /**
+   * @brief Given the bottom blobs, compute the top blobs and the loss.
+   *
+   * @param bottom
+   *     the input blobs, whose data fields store the input data for this layer
+   * @param top
+   *     the preshaped output blobs, whose data fields will store this layers'
+   *     outputs
+   * \return The total loss from the layer.
+   *
+   * The Forward wrapper calls the relevant device wrapper function
+   * (Forward_cpu or Forward_gpu) to compute the top blob values given the
+   * bottom blobs.  If the layer has any non-zero loss_weights, the wrapper
+   * then computes and returns the loss.
+   *
+   * Your layer should implement Forward_cpu and (optionally) Forward_gpu.
+   */
+  virtual float Forward(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top) = 0;
+
+  /**
+   * @brief Given the top blob error gradients, compute the bottom blob error
+   *        gradients.
+   *
+   * @param top
+   *     the output blobs, whose diff fields store the gradient of the error
+   *     with respect to themselves
+   * @param propagate_down
+   *     a vector with equal length to bottom, with each index indicating
+   *     whether to propagate the error gradients down to the bottom blob at
+   *     the corresponding index
+   * @param bottom
+   *     the input blobs, whose diff fields will store the gradient of the error
+   *     with respect to themselves after Backward is run
+   *
+   * The Backward wrapper calls the relevant device wrapper function
+   * (Backward_cpu or Backward_gpu) to compute the bottom blob diffs given the
+   * top blob diffs.
+   *
+   * Your layer should implement Backward_cpu and (optionally) Backward_gpu.
+   */
+  virtual void Backward(const vector<BlobBase*>& top,
+      const vector<bool>& propagate_down,
+      const vector<BlobBase*>& bottom) = 0;
+
+
+  /**
    * @brief Specifies whether the layer should compute gradients w.r.t. a
    *        parameter at a particular index given by param_id.
    *
@@ -234,7 +280,37 @@ public:
     param_propagate_down_[param_id] = value;
   }
 
+  /**
+   * @brief Returns the vector of learnable parameter blobs.
+   */
+  vector<shared_ptr<BlobBase> >& blobs() {
+    return blobs_;
+  }
+
+  /**
+   * @brief Returns the scalar loss associated with a top blob at a given index.
+   */
+  template <typename Dtype>
+  Dtype loss(const int top_index) const {
+    return Dtype(_loss(top_index));
+  }
+
+  /**
+   * @brief Sets the loss associated with a top blob at a given index.
+   */
+  template <typename Dtype>
+  void set_loss(const int top_index, const Dtype value) {
+    _set_loss(top_index, value);
+  }
+
+  /**
+   * @brief Writes the layer parameter to a protocol buffer
+   */
+  virtual void ToProto(LayerParameter* param, bool write_diff = false) = 0;
+
  protected:
+  /** The vector that stores the learnable parameters as a set of blobs. */
+  vector<shared_ptr<BlobBase> > blobs_;
   /** The protobuf that stores the layer parameters */
   LayerParameter layer_param_;
   /** The phase: TRAIN or TEST */
@@ -308,9 +384,13 @@ public:
   /** Initialize forward_mutex_ */
   void InitMutex();
 
+  virtual float _loss(int top_index) const = 0;
+  virtual void _set_loss(int top_index, float value) = 0;
+
   DISABLE_COPY_AND_ASSIGN(LayerBase);
 
 };
+
 
 template <typename Dtype, typename Mtype>
 class Layer: public LayerBase {
@@ -328,84 +408,16 @@ class Layer: public LayerBase {
       }
   }
 
-  /**
-   * @brief Given the bottom blobs, compute the top blobs and the loss.
-   *
-   * @param bottom
-   *     the input blobs, whose data fields store the input data for this layer
-   * @param top
-   *     the preshaped output blobs, whose data fields will store this layers'
-   *     outputs
-   * \return The total loss from the layer.
-   *
-   * The Forward wrapper calls the relevant device wrapper function
-   * (Forward_cpu or Forward_gpu) to compute the top blob values given the
-   * bottom blobs.  If the layer has any non-zero loss_weights, the wrapper
-   * then computes and returns the loss.
-   *
-   * Your layer should implement Forward_cpu and (optionally) Forward_gpu.
-   */
-  inline Mtype Forward(const vector<BlobBase*>& bottom,
+  virtual float Forward(const vector<BlobBase*>& bottom,
       const vector<BlobBase*>& top);
 
-  /**
-   * @brief Given the top blob error gradients, compute the bottom blob error
-   *        gradients.
-   *
-   * @param top
-   *     the output blobs, whose diff fields store the gradient of the error
-   *     with respect to themselves
-   * @param propagate_down
-   *     a vector with equal length to bottom, with each index indicating
-   *     whether to propagate the error gradients down to the bottom blob at
-   *     the corresponding index
-   * @param bottom
-   *     the input blobs, whose diff fields will store the gradient of the error
-   *     with respect to themselves after Backward is run
-   *
-   * The Backward wrapper calls the relevant device wrapper function
-   * (Backward_cpu or Backward_gpu) to compute the bottom blob diffs given the
-   * top blob diffs.
-   *
-   * Your layer should implement Backward_cpu and (optionally) Backward_gpu.
-   */
-  inline void Backward(const vector<BlobBase*>& top,
+  virtual void Backward(const vector<BlobBase*>& top,
       const vector<bool>& propagate_down,
       const vector<BlobBase*>& bottom);
 
-  /**
-   * @brief Returns the vector of learnable parameter blobs.
-   */
-  vector<shared_ptr<Blob<Dtype> > >& blobs() {
-    return blobs_;
-  }
-
-  /**
-   * @brief Returns the scalar loss associated with a top blob at a given index.
-   */
-  inline Dtype loss(const int top_index) const {
-    return (loss_.size() > top_index) ? loss_[top_index] : Dtype(0.);
-  }
-
-  /**
-   * @brief Sets the loss associated with a top blob at a given index.
-   */
-  inline void set_loss(const int top_index, const Dtype value) {
-    if (loss_.size() <= top_index) {
-      loss_.resize(top_index + 1, 0);
-    }
-    loss_[top_index] = value;
-  }
-
-  /**
-   * @brief Writes the layer parameter to a protocol buffer
-   */
   virtual void ToProto(LayerParameter* param, bool write_diff = false);
 
  protected:
-  /** The vector that stores the learnable parameters as a set of blobs. */
-  vector<shared_ptr<Blob<Dtype> > > blobs_;
-
   /** The vector that indicates whether each top blob has a non-zero weight in
    *  the objective function. */
   vector<Dtype> loss_;
@@ -462,13 +474,26 @@ class Layer: public LayerBase {
     }
   }
 
+ private:
+
+  virtual float _loss(int top_index) const {
+    return (loss_.size() > top_index) ? (float) loss_[top_index] : 0.F;
+  }
+
+  virtual void _set_loss(int top_index, float value) {
+    if (loss_.size() <= top_index) {
+      loss_.resize(top_index + 1, 0);
+    }
+    loss_[top_index] = value;
+  }
+
 };  // class Layer
 
 // Forward and backward wrappers. You should implement the cpu and
 // gpu specific implementations instead, and should not change these
 // functions.
 template <typename Dtype, typename Mtype>
-inline Mtype Layer<Dtype,Mtype>::Forward(const vector<BlobBase*>& bottom,
+inline float Layer<Dtype,Mtype>::Forward(const vector<BlobBase*>& bottom,
     const vector<BlobBase*>& top) {
   // Lock during forward to ensure sequential forward
   Lock();
@@ -478,7 +503,7 @@ inline Mtype Layer<Dtype,Mtype>::Forward(const vector<BlobBase*>& bottom,
   case Caffe::CPU:
     Forward_cpu(bottom, top);
     for (int top_id = 0; top_id < top.size(); ++top_id) {
-      if (!this->loss(top_id)) { continue; }
+      if (!this->template loss<Dtype>(top_id)) { continue; }
       const int count = top[top_id]->count();
       const Dtype* data = top[top_id]->cpu_data<Dtype>();
       const Dtype* loss_weights = top[top_id]->cpu_diff<Dtype>();
@@ -489,7 +514,7 @@ inline Mtype Layer<Dtype,Mtype>::Forward(const vector<BlobBase*>& bottom,
     Forward_gpu(bottom, top);
 #ifndef CPU_ONLY
     for (int top_id = 0; top_id < top.size(); ++top_id) {
-      if (!this->loss(top_id)) { continue; }
+      if (!this->template loss<Dtype>(top_id)) { continue; }
       const int count = top[top_id]->count();
       const Dtype* data = top[top_id]->gpu_data<Dtype>();
       const Dtype* loss_weights = top[top_id]->gpu_diff<Dtype>();

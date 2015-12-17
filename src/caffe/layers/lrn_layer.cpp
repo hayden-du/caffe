@@ -107,9 +107,9 @@ void LRNLayer<Dtype,Mtype>::Forward_cpu(const vector<BlobBase*>& bottom,
 
 template <typename Dtype, typename Mtype>
 void LRNLayer<Dtype,Mtype>::CrossChannelForward_cpu(
-    const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
-  const Dtype* bottom_data = bottom[0]->cpu_data();
-  Dtype* top_data = top[0]->mutable_cpu_data();
+    const vector<BlobBase*>& bottom, const vector<BlobBase*>& top) {
+  const Dtype* bottom_data = bottom[0]->cpu_data<Dtype>();
+  Dtype* top_data = top[0]->mutable_cpu_data<Dtype>();
   Dtype* scale_data = scale_.mutable_cpu_data();
   // start with the constant value
   for (int i = 0; i < scale_.count(); ++i) {
@@ -154,7 +154,7 @@ void LRNLayer<Dtype,Mtype>::CrossChannelForward_cpu(
 
 template <typename Dtype, typename Mtype>
 void LRNLayer<Dtype,Mtype>::WithinChannelForward(
-    const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
+    const vector<BlobBase*>& bottom, const vector<BlobBase*>& top) {
   split_layer_->Forward(bottom, split_top_vec_);
   square_layer_->Forward(square_bottom_vec_, square_top_vec_);
   pool_layer_->Forward(square_top_vec_, pool_top_vec_);
@@ -179,13 +179,13 @@ void LRNLayer<Dtype,Mtype>::Backward_cpu(const vector<BlobBase*>& top,
 
 template <typename Dtype, typename Mtype>
 void LRNLayer<Dtype,Mtype>::CrossChannelBackward_cpu(
-    const vector<Blob<Dtype>*>& top, const vector<bool>& propagate_down,
-    const vector<Blob<Dtype>*>& bottom) {
-  const Dtype* top_diff = top[0]->cpu_diff();
-  const Dtype* top_data = top[0]->cpu_data();
-  const Dtype* bottom_data = bottom[0]->cpu_data();
+    const vector<BlobBase*>& top, const vector<bool>& propagate_down,
+    const vector<BlobBase*>& bottom) {
+  const Dtype* top_diff = top[0]->cpu_diff<Dtype>();
+  const Dtype* top_data = top[0]->cpu_data<Dtype>();
+  const Dtype* bottom_data = bottom[0]->cpu_data<Dtype>();
   const Dtype* scale_data = scale_.cpu_data();
-  Dtype* bottom_diff = bottom[0]->mutable_cpu_diff();
+  Dtype* bottom_diff = bottom[0]->mutable_cpu_diff<Dtype>();
   Blob<Dtype> padded_ratio(1, channels_ + size_ - 1, height_, width_);
   Blob<Dtype> accum_ratio(1, 1, height_, width_);
   Dtype* padded_ratio_data = padded_ratio.mutable_cpu_data();
@@ -234,8 +234,8 @@ void LRNLayer<Dtype,Mtype>::CrossChannelBackward_cpu(
 
 template <typename Dtype, typename Mtype>
 void LRNLayer<Dtype,Mtype>::WithinChannelBackward(
-    const vector<Blob<Dtype>*>& top, const vector<bool>& propagate_down,
-    const vector<Blob<Dtype>*>& bottom) {
+    const vector<BlobBase*>& top, const vector<bool>& propagate_down,
+    const vector<BlobBase*>& bottom) {
   if (propagate_down[0]) {
     vector<bool> product_propagate_down(2, true);
     product_layer_->Backward(top, product_propagate_down, product_bottom_vec_);

@@ -22,7 +22,7 @@ namespace caffe {
 template <typename Dtype, typename Mtype>
 void CuDNNConvolutionLayer<Dtype,Mtype>::Forward_gpu(
     const vector<BlobBase*>& bottom, const vector<BlobBase*>& top) {
-    const Dtype* weight = this->blobs_[0]->gpu_data();
+    const Dtype* weight = this->blobs_[0]->template gpu_data<Dtype>();
     for (int i = 0; i < bottom.size(); ++i) {
       const Dtype* bottom_data = bottom[i]->gpu_data<Dtype>();
       Dtype* top_data = top[i]->mutable_gpu_data<Dtype>();
@@ -57,7 +57,7 @@ void CuDNNConvolutionLayer<Dtype,Mtype>::Forward_gpu(
         workspaceData = NULL;
         // Bias.
         if (this->bias_term_) {
-          const Dtype* bias_data = this->blobs_[1]->gpu_data();
+          const Dtype* bias_data = this->blobs_[1]->template gpu_data<Dtype>();
           CUDNN_CHECK(cudnnAddTensor_v3(Caffe::cudnn_handle(),
                                         cudnn::dataType<Dtype>::one,
                                         bias_desc_,
@@ -86,14 +86,14 @@ void CuDNNConvolutionLayer<Dtype,Mtype>::Backward_gpu(const vector<BlobBase*>& t
     Dtype* weight_diff = NULL;
 
     if (this->param_propagate_down_[0]) {
-      weight = this->blobs_[0]->gpu_data();
-      weight_diff = this->blobs_[0]->mutable_gpu_diff();
+      weight = this->blobs_[0]->template gpu_data<Dtype>();
+      weight_diff = this->blobs_[0]->template mutable_gpu_diff<Dtype>();
     caffe_gpu_set<Dtype,Mtype>(this->blobs_[0]->count(), Mtype(0), weight_diff);
     }
     Dtype* bias_diff = NULL;
 
     if (this->bias_term_ && this->param_propagate_down_[1]) {
-      bias_diff = this->blobs_[1]->mutable_gpu_diff();
+      bias_diff = this->blobs_[1]->template mutable_gpu_diff<Dtype>();
     caffe_gpu_set<Dtype,Mtype>(this->blobs_[1]->count(), Mtype(0), bias_diff);
     }
 
@@ -138,7 +138,7 @@ void CuDNNConvolutionLayer<Dtype,Mtype>::Backward_gpu(const vector<BlobBase*>& t
         // Gradient w.r.t. bottom data.
         if (propagate_down[i]) {
           if (weight == NULL) {
-            weight = this->blobs_[0]->gpu_data();
+            weight = this->blobs_[0]->template gpu_data<Dtype>();
           }
           Dtype* bottom_diff = bottom[i]->mutable_gpu_diff<Dtype>();
           gpu_memory::allocate(&workspaceData,

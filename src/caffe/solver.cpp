@@ -246,10 +246,11 @@ void Solver<Dtype,Mtype>::Step(int iters) {
     if (display) {
       LOG_IF(INFO, Caffe::root_solver()) << "Iteration " << iter_
           << ", loss = " << smoothed_loss;
-      const vector<Blob<Dtype>*>& result = net_->output_blobs();
+
+      const vector<BlobBase*>& result = net_->output_blobs();
       int score_index = 0;
       for (int j = 0; j < result.size(); ++j) {
-        const Dtype* result_vec = result[j]->cpu_data();
+        const Dtype* result_vec = result[j]->cpu_data<Dtype>();
         const string& output_name =
             net_->blob_names()[net_->output_blob_indices()[j]];
         const Dtype loss_weight = net_->blob_loss_weights()[net_->output_blob_indices()[j]];
@@ -373,14 +374,14 @@ void Solver<Dtype,Mtype>::Test(const int test_net_id) {
     }
 
     Mtype iter_loss;
-    const vector<Blob<Dtype>*>& result =
+    const vector<BlobBase*>& result =
         test_net->Forward(bottom_vec, &iter_loss);
     if (param_.test_compute_loss()) {
       loss += iter_loss;
     }
     if (i == 0) {
       for (int j = 0; j < result.size(); ++j) {
-        const Dtype* result_vec = result[j]->cpu_data();
+        const Dtype* result_vec = result[j]->cpu_data<Dtype>();
         for (int k = 0; k < result[j]->count(); ++k) {
           test_score.push_back(result_vec[k]);
           test_score_output_id.push_back(j);
@@ -389,7 +390,7 @@ void Solver<Dtype,Mtype>::Test(const int test_net_id) {
     } else {
       int idx = 0;
       for (int j = 0; j < result.size(); ++j) {
-        const Dtype* result_vec = result[j]->cpu_data();
+        const Dtype* result_vec = result[j]->cpu_data<Dtype>();
         for (int k = 0; k < result[j]->count(); ++k) {
           test_score[idx] = result_vec[k] + test_score[idx] ;
           idx++;
@@ -552,7 +553,7 @@ Dtype SGDSolver<Dtype,Mtype>::GetLearningRate() {
 template <typename Dtype, typename Mtype>
 void SGDSolver<Dtype,Mtype>::PreSolve() {
   // Initialize the history
-  const vector<Blob<Dtype>*>& net_params = this->net_->learnable_params();
+  const vector<BlobBase*>& net_params = this->net_->learnable_params();
   history_.clear();
   update_.clear();
   temp_.clear();
@@ -568,7 +569,7 @@ template <typename Dtype, typename Mtype>
 void SGDSolver<Dtype,Mtype>::ClipGradients() {
   const Mtype clip_gradients(this->param_.clip_gradients());
   if (clip_gradients < 0) { return; }
-  const vector<Blob<Dtype>*>& net_params = this->net_->learnable_params();
+  const vector<BlobBase*>& net_params = this->net_->learnable_params();
   Mtype sumsq_diff(0);
   for (int i = 0; i < net_params.size(); ++i) {
     sumsq_diff += net_params[i]->sumsq_diff<Dtype,Mtype>();
@@ -580,7 +581,7 @@ void SGDSolver<Dtype,Mtype>::ClipGradients() {
         << l2norm_diff << " > " << clip_gradients << ") "
         << "by scale factor " << scale_factor;
     for (int i = 0; i < net_params.size(); ++i) {
-      net_params[i]->scale_diff(scale_factor);
+      net_params[i]->scale_diff<Dtype>(scale_factor);
     }
   }
 }
@@ -606,18 +607,18 @@ template <typename Dtype, typename Mtype>
 void SGDSolver<Dtype,Mtype>::Normalize(int param_id) {
   if (this->param_.iter_size() == 1) { return; }
   // Scale gradient to counterbalance accumulation.
-  const vector<Blob<Dtype>*>& net_params = this->net_->learnable_params();
+  const vector<BlobBase*>& net_params = this->net_->learnable_params();
   const Mtype accum_normalization = Mtype(1.) / this->param_.iter_size();
   switch (Caffe::mode()) {
   case Caffe::CPU: {
     caffe_scal<Dtype,Mtype>(net_params[param_id]->count(), accum_normalization,
-        net_params[param_id]->mutable_cpu_diff());
+        net_params[param_id]->mutable_cpu_diff<Dtype>());
     break;
   }
   case Caffe::GPU: {
 #ifndef CPU_ONLY
     caffe_gpu_scal(net_params[param_id]->count(), accum_normalization,
-        net_params[param_id]->mutable_gpu_diff());
+        net_params[param_id]->mutable_gpu_diff<Dtype>());
 #else
     NO_GPU;
 #endif
@@ -630,7 +631,7 @@ void SGDSolver<Dtype,Mtype>::Normalize(int param_id) {
 
 template <typename Dtype, typename Mtype>
 void SGDSolver<Dtype,Mtype>::Regularize(int param_id) {
-  const vector<Blob<Dtype>*>& net_params = this->net_->learnable_params();
+  const vector<BlobBase*>& net_params = this->net_->learnable_params();
   const vector<float>& net_params_weight_decay =
       this->net_->params_weight_decay();
   Mtype weight_decay(this->param_.weight_decay());
@@ -643,16 +644,16 @@ void SGDSolver<Dtype,Mtype>::Regularize(int param_id) {
         // add weight decay
         caffe_axpy<Dtype,Mtype>(net_params[param_id]->count(),
             local_decay,
-            net_params[param_id]->cpu_data(),
-            net_params[param_id]->mutable_cpu_diff());
+            net_params[param_id]->cpu_data<Dtype>(),
+            net_params[param_id]->mutable_cpu_diff<Dtype>());
       } else if (regularization_type == "L1") {
         caffe_cpu_sign(net_params[param_id]->count(),
-            net_params[param_id]->cpu_data(),
+            net_params[param_id]->cpu_data<Dtype>(),
             temp_[param_id]->mutable_cpu_data());
         caffe_axpy<Dtype,Mtype>(net_params[param_id]->count(),
             local_decay,
             temp_[param_id]->cpu_data(),
-            net_params[param_id]->mutable_cpu_diff());
+            net_params[param_id]->mutable_cpu_diff<Dtype>());
       } else {
         LOG(FATAL) << "Unknown regularization type: " << regularization_type;
       }
@@ -666,16 +667,16 @@ void SGDSolver<Dtype,Mtype>::Regularize(int param_id) {
         // add weight decay
         caffe_gpu_axpy<Dtype,Mtype>(net_params[param_id]->count(),
             local_decay,
-            net_params[param_id]->gpu_data(),
-            net_params[param_id]->mutable_gpu_diff());
+            net_params[param_id]->gpu_data<Dtype>(),
+            net_params[param_id]->mutable_gpu_diff<Dtype>());
       } else if (regularization_type == "L1") {
         caffe_gpu_sign<Dtype,Mtype>(net_params[param_id]->count(),
-            net_params[param_id]->gpu_data(),
+            net_params[param_id]->gpu_data<Dtype>(),
             temp_[param_id]->mutable_gpu_data());
         caffe_gpu_axpy<Dtype,Mtype>(net_params[param_id]->count(),
             local_decay,
             temp_[param_id]->gpu_data(),
-            net_params[param_id]->mutable_gpu_diff());
+            net_params[param_id]->mutable_gpu_diff<Dtype>());
       } else {
         LOG(FATAL) << "Unknown regularization type: " << regularization_type;
       }
@@ -692,7 +693,7 @@ void SGDSolver<Dtype,Mtype>::Regularize(int param_id) {
 
 template <typename Dtype, typename Mtype>
 void SGDSolver<Dtype,Mtype>::ComputeUpdateValue(int param_id, Dtype rate) {
-  const vector<Blob<Dtype>*>& net_params = this->net_->learnable_params();
+  const vector<BlobBase*>& net_params = this->net_->learnable_params();
   const vector<float>& net_params_lr = this->net_->params_lr();
   Mtype momentum(this->param_.momentum());
   Mtype local_rate = rate * net_params_lr[param_id];
@@ -700,21 +701,21 @@ void SGDSolver<Dtype,Mtype>::ComputeUpdateValue(int param_id, Dtype rate) {
   switch (Caffe::mode()) {
   case Caffe::CPU: {
     caffe_cpu_axpby<Dtype,Mtype>(net_params[param_id]->count(), local_rate,
-              net_params[param_id]->cpu_diff(), momentum,
+              net_params[param_id]->cpu_diff<Dtype>(), momentum,
               history_[param_id]->mutable_cpu_data());
     caffe_copy(net_params[param_id]->count(),
         history_[param_id]->cpu_data(),
-        net_params[param_id]->mutable_cpu_diff());
+        net_params[param_id]->mutable_cpu_diff<Dtype>());
     break;
   }
   case Caffe::GPU: {
 #ifndef CPU_ONLY
     caffe_gpu_axpby<Dtype,Mtype>(net_params[param_id]->count(), local_rate,
-              net_params[param_id]->gpu_diff(), momentum,
+              net_params[param_id]->gpu_diff<Dtype>(), momentum,
               history_[param_id]->mutable_gpu_data());
     caffe_copy(net_params[param_id]->count(),
         history_[param_id]->gpu_data(),
-        net_params[param_id]->mutable_gpu_diff());
+        net_params[param_id]->mutable_gpu_diff<Dtype>());
 #else
     NO_GPU;
 #endif
@@ -832,7 +833,7 @@ void SGDSolver<Dtype,Mtype>::RestoreSolverStateFromHDF5(const string& state_file
 template <typename Dtype, typename Mtype>
 void NesterovSolver<Dtype,Mtype>::ComputeUpdateValue(int param_id, Dtype rate) {
   CHECK(Caffe::root_solver());
-  const vector<Blob<Dtype>*>& net_params = this->net_->learnable_params();
+  const vector<BlobBase*>& net_params = this->net_->learnable_params();
   const vector<float>& net_params_lr = this->net_->params_lr();
   Mtype momentum(this->param_.momentum());
   Mtype local_rate = rate * net_params_lr[param_id];
@@ -845,7 +846,7 @@ void NesterovSolver<Dtype,Mtype>::ComputeUpdateValue(int param_id, Dtype rate) {
 
     // update history
     caffe_cpu_axpby<Dtype,Mtype>(net_params[param_id]->count(), local_rate,
-              net_params[param_id]->cpu_diff(), momentum,
+              net_params[param_id]->cpu_diff<Dtype>(), momentum,
               this->history_[param_id]->mutable_cpu_data());
 
     // compute update: step back then over step
@@ -856,7 +857,7 @@ void NesterovSolver<Dtype,Mtype>::ComputeUpdateValue(int param_id, Dtype rate) {
     // copy
     caffe_copy(net_params[param_id]->count(),
         this->update_[param_id]->cpu_data(),
-        net_params[param_id]->mutable_cpu_diff());
+        net_params[param_id]->mutable_cpu_diff<Dtype>());
     break;
   }
   case Caffe::GPU: {
@@ -868,7 +869,7 @@ void NesterovSolver<Dtype,Mtype>::ComputeUpdateValue(int param_id, Dtype rate) {
 
     // update history
     caffe_gpu_axpby<Dtype,Mtype>(net_params[param_id]->count(), local_rate,
-              net_params[param_id]->gpu_diff(), momentum,
+              net_params[param_id]->gpu_diff<Dtype>(), momentum,
               this->history_[param_id]->mutable_gpu_data());
 
     // compute update: step back then over step
@@ -879,7 +880,7 @@ void NesterovSolver<Dtype,Mtype>::ComputeUpdateValue(int param_id, Dtype rate) {
     // copy
     caffe_copy(net_params[param_id]->count(),
         this->update_[param_id]->gpu_data(),
-        net_params[param_id]->mutable_gpu_diff());
+        net_params[param_id]->mutable_gpu_diff<Dtype>());
 #else
     NO_GPU;
 #endif
@@ -893,7 +894,7 @@ void NesterovSolver<Dtype,Mtype>::ComputeUpdateValue(int param_id, Dtype rate) {
 template <typename Dtype, typename Mtype>
 void AdaGradSolver<Dtype,Mtype>::ComputeUpdateValue(int param_id, Dtype rate) {
   CHECK(Caffe::root_solver());
-  const vector<Blob<Dtype>*>& net_params = this->net_->learnable_params();
+  const vector<BlobBase*>& net_params = this->net_->learnable_params();
   const vector<float>& net_params_lr = this->net_->params_lr();
   Dtype delta(this->param_.delta());
   if (sizeof(Dtype) == 2 && delta < epsilonDtype<Dtype>()) {
@@ -904,7 +905,7 @@ void AdaGradSolver<Dtype,Mtype>::ComputeUpdateValue(int param_id, Dtype rate) {
   case Caffe::CPU: {
     // compute square of gradient in update
     caffe_powx<Dtype,Mtype>(net_params[param_id]->count(),
-        net_params[param_id]->cpu_diff(), Mtype(2),
+        net_params[param_id]->cpu_diff<Dtype>(), Mtype(2),
         this->update_[param_id]->mutable_cpu_data());
 
     // update history
@@ -922,21 +923,21 @@ void AdaGradSolver<Dtype,Mtype>::ComputeUpdateValue(int param_id, Dtype rate) {
               delta, this->update_[param_id]->mutable_cpu_data());
 
     caffe_div(net_params[param_id]->count(),
-              net_params[param_id]->cpu_diff(),
+              net_params[param_id]->cpu_diff<Dtype>(),
               this->update_[param_id]->cpu_data(),
               this->update_[param_id]->mutable_cpu_data());
 
     // scale and copy
     caffe_cpu_axpby<Dtype,Mtype>(net_params[param_id]->count(), local_rate,
         this->update_[param_id]->cpu_data(), Mtype(0),
-        net_params[param_id]->mutable_cpu_diff());
+        net_params[param_id]->mutable_cpu_diff<Dtype>());
     break;
   }
   case Caffe::GPU: {
 #ifndef CPU_ONLY
     // compute square of gradient in update
     caffe_gpu_powx<Dtype,Mtype>(net_params[param_id]->count(),
-        net_params[param_id]->gpu_diff(), Mtype(2),
+        net_params[param_id]->gpu_diff<Dtype>(), Mtype(2),
         this->update_[param_id]->mutable_gpu_data());
 
     // update history
@@ -954,14 +955,14 @@ void AdaGradSolver<Dtype,Mtype>::ComputeUpdateValue(int param_id, Dtype rate) {
               delta, this->update_[param_id]->mutable_gpu_data());
 
     caffe_gpu_div<Dtype,Mtype>(net_params[param_id]->count(),
-              net_params[param_id]->gpu_diff(),
+              net_params[param_id]->gpu_diff<Dtype>(),
               this->update_[param_id]->gpu_data(),
               this->update_[param_id]->mutable_gpu_data());
 
     // scale and copy
     caffe_gpu_axpby<Dtype,Mtype>(net_params[param_id]->count(), local_rate,
         this->update_[param_id]->gpu_data(), Mtype(0),
-        net_params[param_id]->mutable_gpu_diff());
+        net_params[param_id]->mutable_gpu_diff<Dtype>());
 #else
     NO_GPU;
 #endif
@@ -974,7 +975,7 @@ void AdaGradSolver<Dtype,Mtype>::ComputeUpdateValue(int param_id, Dtype rate) {
 
 template <typename Dtype, typename Mtype>
 void RMSPropSolver<Dtype,Mtype>::ComputeUpdateValue(int param_id, Dtype rate) {
-  const vector<Blob<Dtype>*>& net_params = this->net_->learnable_params();
+  const vector<BlobBase*>& net_params = this->net_->learnable_params();
   const vector<float>& net_params_lr = this->net_->params_lr();
 
   // get the learning rate
@@ -989,7 +990,7 @@ void RMSPropSolver<Dtype,Mtype>::ComputeUpdateValue(int param_id, Dtype rate) {
   case Caffe::CPU:
     // compute square of gradient in update
     caffe_powx<Dtype,Mtype>(net_params[param_id]->count(),
-        net_params[param_id]->cpu_diff(), Mtype(2),
+        net_params[param_id]->cpu_diff<Dtype>(), Mtype(2),
         this->update_[param_id]->mutable_cpu_data());
 
     // update history
@@ -1006,19 +1007,19 @@ void RMSPropSolver<Dtype,Mtype>::ComputeUpdateValue(int param_id, Dtype rate) {
         delta, this->update_[param_id]->mutable_cpu_data());
 
     caffe_div(net_params[param_id]->count(),
-        net_params[param_id]->cpu_diff(), this->update_[param_id]->cpu_data(),
+        net_params[param_id]->cpu_diff<Dtype>(), this->update_[param_id]->cpu_data(),
         this->update_[param_id]->mutable_cpu_data());
 
     // scale and copy
     caffe_cpu_axpby(net_params[param_id]->count(), local_rate,
         this->update_[param_id]->cpu_data(), Mtype(0),
-        net_params[param_id]->mutable_cpu_diff());
+        net_params[param_id]->mutable_cpu_diff<Dtype>());
     break;
   case Caffe::GPU:
 #ifndef CPU_ONLY
     // compute square of gradient in update
     caffe_gpu_powx<Dtype,Mtype>(net_params[param_id]->count(),
-        net_params[param_id]->gpu_diff(), Mtype(2),
+        net_params[param_id]->gpu_diff<Dtype>(), Mtype(2),
         this->update_[param_id]->mutable_gpu_data());
 
     // update history
@@ -1035,12 +1036,12 @@ void RMSPropSolver<Dtype,Mtype>::ComputeUpdateValue(int param_id, Dtype rate) {
         delta, this->update_[param_id]->mutable_gpu_data());
 
     caffe_gpu_div<Dtype,Mtype>(net_params[param_id]->count(),
-        net_params[param_id]->gpu_diff(), this->update_[param_id]->gpu_data(),
+        net_params[param_id]->gpu_diff<Dtype>(), this->update_[param_id]->gpu_data(),
         this->update_[param_id]->mutable_gpu_data());
 
     caffe_gpu_axpby(net_params[param_id]->count(), local_rate,
         this->update_[param_id]->gpu_data(), Mtype(0),
-        net_params[param_id]->mutable_gpu_diff());
+        net_params[param_id]->mutable_gpu_diff<Dtype>());
 #else
     NO_GPU;
 #endif
@@ -1054,7 +1055,7 @@ template <typename Dtype, typename Mtype>
 void AdaDeltaSolver<Dtype,Mtype>::AdaDeltaPreSolve() {
   // Add the extra history entries for AdaDelta after those from
   // SGDSolver::PreSolve
-  const vector<Blob<Dtype>*>& net_params = this->net_->learnable_params();
+  const vector<BlobBase*>& net_params = this->net_->learnable_params();
   for (int i = 0; i < net_params.size(); ++i) {
         const vector<int>& shape = net_params[i]->shape();
         this->history_.push_back(
@@ -1064,7 +1065,7 @@ void AdaDeltaSolver<Dtype,Mtype>::AdaDeltaPreSolve() {
 
 template <typename Dtype, typename Mtype>
 void AdaDeltaSolver<Dtype,Mtype>::ComputeUpdateValue(int param_id, Dtype rate) {
-  const vector<Blob<Dtype>*>& net_params = this->net_->learnable_params();
+  const vector<BlobBase*>& net_params = this->net_->learnable_params();
   const vector<float>& net_params_lr = this->net_->params_lr();
   Dtype delta(this->param_.delta());
   if (sizeof(Dtype) == 2 && delta < epsilonDtype<Dtype>()) {
@@ -1077,7 +1078,7 @@ void AdaDeltaSolver<Dtype,Mtype>::ComputeUpdateValue(int param_id, Dtype rate) {
   case Caffe::CPU: {
     // compute square of gradient in update
     caffe_powx<Dtype,Mtype>(net_params[param_id]->count(),
-        net_params[param_id]->cpu_diff(), Mtype(2),
+        net_params[param_id]->cpu_diff<Dtype>(), Mtype(2),
         this->update_[param_id]->mutable_cpu_data());
 
     // update history of gradients
@@ -1112,13 +1113,13 @@ void AdaDeltaSolver<Dtype,Mtype>::ComputeUpdateValue(int param_id, Dtype rate) {
 
     // compute the update
     caffe_mul(net_params[param_id]->count(),
-        net_params[param_id]->cpu_diff(),
+        net_params[param_id]->cpu_diff<Dtype>(),
         this->update_[param_id]->cpu_data(),
-        net_params[param_id]->mutable_cpu_diff());
+        net_params[param_id]->mutable_cpu_diff<Dtype>());
 
     // compute square of update
     caffe_powx<Dtype,Mtype>(net_params[param_id]->count(),
-        net_params[param_id]->cpu_diff(), Mtype(2),
+        net_params[param_id]->cpu_diff<Dtype>(), Mtype(2),
         this->update_[param_id]->mutable_cpu_data());
 
     // update history of updates
@@ -1128,15 +1129,15 @@ void AdaDeltaSolver<Dtype,Mtype>::ComputeUpdateValue(int param_id, Dtype rate) {
 
     // apply learning rate
     caffe_cpu_scale<Dtype,Mtype>(net_params[param_id]->count(), local_rate,
-        net_params[param_id]->cpu_diff(),
-        net_params[param_id]->mutable_cpu_diff());
+        net_params[param_id]->cpu_diff<Dtype>(),
+        net_params[param_id]->mutable_cpu_diff<Dtype>());
     break;
   }
   case Caffe::GPU: {
 #ifndef CPU_ONLY
     // compute square of gradient in update
     caffe_gpu_powx<Dtype,Mtype>(net_params[param_id]->count(),
-        net_params[param_id]->gpu_diff(), Mtype(2),
+        net_params[param_id]->gpu_diff<Dtype>(), Mtype(2),
         this->update_[param_id]->mutable_gpu_data());
 
     // update history of gradients
@@ -1171,13 +1172,13 @@ void AdaDeltaSolver<Dtype,Mtype>::ComputeUpdateValue(int param_id, Dtype rate) {
 
     // compute the update and copy to net_diff
     caffe_gpu_mul<Dtype,Mtype>(net_params[param_id]->count(),
-        net_params[param_id]->gpu_diff(),
+        net_params[param_id]->gpu_diff<Dtype>(),
         this->update_[param_id]->gpu_data(),
-        net_params[param_id]->mutable_gpu_diff());
+        net_params[param_id]->mutable_gpu_diff<Dtype>());
 
     // compute square of update
     caffe_gpu_powx<Dtype,Mtype>(net_params[param_id]->count(),
-        net_params[param_id]->gpu_diff(), Mtype(2),
+        net_params[param_id]->gpu_diff<Dtype>(), Mtype(2),
         this->update_[param_id]->mutable_gpu_data());
 
     // update history of updates
@@ -1187,8 +1188,8 @@ void AdaDeltaSolver<Dtype,Mtype>::ComputeUpdateValue(int param_id, Dtype rate) {
 
     // apply learning rate
     caffe_gpu_scale(net_params[param_id]->count(), local_rate,
-        net_params[param_id]->gpu_diff(),
-        net_params[param_id]->mutable_gpu_diff());
+        net_params[param_id]->gpu_diff<Dtype>(),
+        net_params[param_id]->mutable_gpu_diff<Dtype>());
 #else
     NO_GPU;
 #endif
@@ -1203,7 +1204,7 @@ template <typename Dtype, typename Mtype>
 void AdamSolver<Dtype,Mtype>::AdamPreSolve() {
   // Add the extra history entries for Adam after those from
   // SGDSolver::PreSolve
-  const vector<Blob<Dtype>*>& net_params = this->net_->learnable_params();
+  const vector<BlobBase*>& net_params = this->net_->learnable_params();
   for (int i = 0; i < net_params.size(); ++i) {
     const vector<int>& shape = net_params[i]->shape();
     this->history_.push_back(
@@ -1213,7 +1214,7 @@ void AdamSolver<Dtype,Mtype>::AdamPreSolve() {
 
 template <typename Dtype, typename Mtype>
 void AdamSolver<Dtype,Mtype>::ComputeUpdateValue(int param_id, Dtype rate) {
-  const vector<Blob<Dtype>*>& net_params = this->net_->learnable_params();
+  const vector<BlobBase*>& net_params = this->net_->learnable_params();
   const vector<float>& net_params_lr = this->net_->params_lr();
   Mtype local_rate = rate * net_params_lr[param_id];
   const Mtype beta1(this->param_.momentum());
@@ -1237,13 +1238,13 @@ void AdamSolver<Dtype,Mtype>::ComputeUpdateValue(int param_id, Dtype rate) {
     case Caffe::CPU: {
     // update m <- \beta_1 m_{t-1} + (1-\beta_1)g_t
     caffe_cpu_axpby(N, Mtype(1. - beta1),
-        net_params[param_id]->cpu_diff(), beta1,
+        net_params[param_id]->cpu_diff<Dtype>(), beta1,
         val_m->mutable_cpu_data());
 
     // update v <- \beta_2 m_{t-1} + (1-\beta_2)g_t^2
     caffe_mul(N,
-        net_params[param_id]->cpu_diff(),
-        net_params[param_id]->cpu_diff(),
+        net_params[param_id]->cpu_diff<Dtype>(),
+        net_params[param_id]->cpu_diff<Dtype>(),
     val_t->mutable_cpu_data());
     caffe_cpu_axpby(N, Mtype(1. - beta2),
         val_t->cpu_data(), beta2,
@@ -1261,20 +1262,20 @@ void AdamSolver<Dtype,Mtype>::ComputeUpdateValue(int param_id, Dtype rate) {
 
     caffe_cpu_scale<Dtype,Mtype>(N, local_rate*correction,
         val_t->cpu_data(),
-        net_params[param_id]->mutable_cpu_diff());
+        net_params[param_id]->mutable_cpu_diff<Dtype>());
     break;
   }
   case Caffe::GPU: {
 #ifndef CPU_ONLY
     // update m <- \beta_1 m_{t-1} + (1-\beta_1)g_t
     caffe_gpu_axpby(N, Mtype(1.-beta1),
-        net_params[param_id]->gpu_diff(), beta1,
+        net_params[param_id]->gpu_diff<Dtype>(), beta1,
         val_m->mutable_gpu_data());
 
     // update v <- \beta_2 m_{t-1} + (1-\beta_2)g_t^2
     caffe_gpu_mul<Dtype,Mtype>(N,
-        net_params[param_id]->gpu_diff(),
-        net_params[param_id]->gpu_diff(),
+        net_params[param_id]->gpu_diff<Dtype>(),
+        net_params[param_id]->gpu_diff<Dtype>(),
         val_t->mutable_gpu_data());
     caffe_gpu_axpby(N, Mtype(1. - beta2),
         val_t->gpu_data(), beta2,
@@ -1293,7 +1294,7 @@ void AdamSolver<Dtype,Mtype>::ComputeUpdateValue(int param_id, Dtype rate) {
 
     caffe_gpu_scale(N, Mtype(local_rate*correction),
         val_t->gpu_data(),
-        net_params[param_id]->mutable_gpu_diff());
+        net_params[param_id]->mutable_gpu_diff<Dtype>());
 #else
     NO_GPU;
 #endif

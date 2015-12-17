@@ -96,10 +96,10 @@ void ContrastiveLossLayer<Dtype,Mtype>::Backward_gpu(const vector<BlobBase*>& to
       // NOLINT_NEXT_LINE(whitespace/operators)
       CLLBackward<Dtype,Mtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
           count, channels, margin, legacy_version, alpha,
-          bottom[2]->gpu_data(),  // pair similarity 0 or 1
+          bottom[2]->gpu_data<Dtype>(),  // pair similarity 0 or 1
           diff_.gpu_data(),  // the cached eltwise difference between a and b
           dist_sq_.gpu_data(),  // the cached square distance between a and b
-          bottom[i]->mutable_gpu_diff());
+          bottom[i]->mutable_gpu_diff<Dtype>());
       CUDA_POST_KERNEL_CHECK;
     }
   }

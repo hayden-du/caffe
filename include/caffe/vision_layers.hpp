@@ -408,18 +408,18 @@ class LRNLayer : public Layer<Dtype,Mtype> {
   virtual void Backward_gpu(const vector<BlobBase*>& top,
       const vector<bool>& propagate_down, const vector<BlobBase*>& bottom);
 
-  virtual void CrossChannelForward_cpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
-  virtual void CrossChannelForward_gpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
-  virtual void WithinChannelForward(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
-  virtual void CrossChannelBackward_cpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
-  virtual void CrossChannelBackward_gpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
-  virtual void WithinChannelBackward(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+  virtual void CrossChannelForward_cpu(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top);
+  virtual void CrossChannelForward_gpu(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top);
+  virtual void WithinChannelForward(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top);
+  virtual void CrossChannelBackward_cpu(const vector<BlobBase*>& top,
+      const vector<bool>& propagate_down, const vector<BlobBase*>& bottom);
+  virtual void CrossChannelBackward_gpu(const vector<BlobBase*>& top,
+      const vector<bool>& propagate_down, const vector<BlobBase*>& bottom);
+  virtual void WithinChannelBackward(const vector<BlobBase*>& top,
+      const vector<bool>& propagate_down, const vector<BlobBase*>& bottom);
 
   int size_;
   int pre_pad_;
@@ -437,21 +437,21 @@ class LRNLayer : public Layer<Dtype,Mtype> {
 
   // Fields used for normalization WITHIN_CHANNEL
   shared_ptr<SplitLayer<Dtype,Mtype> > split_layer_;
-  vector<Blob<Dtype>*> split_top_vec_;
+  vector<BlobBase*> split_top_vec_;
   shared_ptr<PowerLayer<Dtype,Mtype> > square_layer_;
   Blob<Dtype> square_input_;
   Blob<Dtype> square_output_;
-  vector<Blob<Dtype>*> square_bottom_vec_;
-  vector<Blob<Dtype>*> square_top_vec_;
+  vector<BlobBase*> square_bottom_vec_;
+  vector<BlobBase*> square_top_vec_;
   shared_ptr<PoolingLayer<Dtype,Mtype> > pool_layer_;
   Blob<Dtype> pool_output_;
-  vector<Blob<Dtype>*> pool_top_vec_;
+  vector<BlobBase*> pool_top_vec_;
   shared_ptr<PowerLayer<Dtype,Mtype> > power_layer_;
   Blob<Dtype> power_output_;
-  vector<Blob<Dtype>*> power_top_vec_;
+  vector<BlobBase*> power_top_vec_;
   shared_ptr<EltwiseLayer<Dtype,Mtype> > product_layer_;
   Blob<Dtype> product_input_;
-  vector<Blob<Dtype>*> product_bottom_vec_;
+  vector<BlobBase*> product_bottom_vec_;
 };
 
 #ifdef USE_CUDNN
@@ -630,23 +630,23 @@ class SPPLayer : public Layer<Dtype,Mtype> {
   /// the internal Split layer that feeds the pooling layers
   shared_ptr<SplitLayer<Dtype,Mtype> > split_layer_;
   /// top vector holder used in call to the underlying SplitLayer::Forward
-  vector<Blob<Dtype>*> split_top_vec_;
+  vector<BlobBase*> split_top_vec_;
   /// bottom vector holder used in call to the underlying PoolingLayer::Forward
-  vector<vector<Blob<Dtype>*>*> pooling_bottom_vecs_;
+  vector<vector<BlobBase*>*> pooling_bottom_vecs_;
   /// the internal Pooling layers of different kernel sizes
   vector<shared_ptr<PoolingLayer<Dtype,Mtype> > > pooling_layers_;
   /// top vector holders used in call to the underlying PoolingLayer::Forward
-  vector<vector<Blob<Dtype>*>*> pooling_top_vecs_;
+  vector<vector<BlobBase*>*> pooling_top_vecs_;
   /// pooling_outputs stores the outputs of the PoolingLayers
   vector<Blob<Dtype>*> pooling_outputs_;
   /// the internal Flatten layers that the Pooling layers feed into
   vector<FlattenLayer<Dtype,Mtype>*> flatten_layers_;
   /// top vector holders used in call to the underlying FlattenLayer::Forward
-  vector<vector<Blob<Dtype>*>*> flatten_top_vecs_;
+  vector<vector<BlobBase*>*> flatten_top_vecs_;
   /// flatten_outputs stores the outputs of the FlattenLayers
   vector<Blob<Dtype>*> flatten_outputs_;
   /// bottom vector holder used in call to the underlying ConcatLayer::Forward
-  vector<Blob<Dtype>*> concat_bottom_vec_;
+  vector<BlobBase*> concat_bottom_vec_;
   /// the internal Concat layers that the Flatten layers feed into
   shared_ptr<ConcatLayer<Dtype,Mtype> > concat_layer_;
 };

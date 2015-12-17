@@ -36,7 +36,7 @@ class Net {
    *
    * You can get the input blobs using input_blobs().
    */
-  const vector<Blob<Dtype>*>& ForwardPrefilled(Mtype* loss = NULL);
+  const vector<BlobBase*>& ForwardPrefilled(Mtype* loss = NULL);
 
   /**
    * The From and To variants of Forward and Backward operate on the
@@ -50,7 +50,7 @@ class Net {
   Mtype ForwardFrom(int start);
   Mtype ForwardTo(int end);
   /// @brief Run forward using a set of bottom blobs, and return the result.
-  const vector<Blob<Dtype>*>& Forward(const vector<Blob<Dtype>* > & bottom,
+  const vector<BlobBase*>& Forward(const vector<Blob<Dtype>* > & bottom,
       Mtype* loss = NULL);
   /**
    * @brief Run forward using a serialized BlobProtoVector and return the
@@ -126,11 +126,11 @@ class Net {
   /// @brief returns the blob names
   inline const vector<string>& blob_names() const { return blob_names_; }
   /// @brief returns the blobs
-  inline const vector<shared_ptr<Blob<Dtype> > >& blobs() const {
+  inline const vector<shared_ptr<BlobBase> >& blobs() const {
     return blobs_;
   }
   /// @brief returns the layers
-  inline const vector<shared_ptr<Layer<Dtype,Mtype> > >& layers() const {
+  inline const vector<shared_ptr<LayerBase> >& layers() const {
     return layers_;
   }
   /// @brief returns the phase: TRAIN or TEST
@@ -139,14 +139,14 @@ class Net {
    * @brief returns the bottom vecs for each layer -- usually you won't
    *        need this unless you do per-layer checks such as gradients.
    */
-  inline const vector<vector<Blob<Dtype>*> >& bottom_vecs() const {
+  inline const vector<vector<BlobBase*> >& bottom_vecs() const {
     return bottom_vecs_;
   }
   /**
    * @brief returns the top vecs for each layer -- usually you won't
    *        need this unless you do per-layer checks such as gradients.
    */
-  inline const vector<vector<Blob<Dtype>*> >& top_vecs() const {
+  inline const vector<vector<BlobBase*> >& top_vecs() const {
     return top_vecs_;
   }
   inline const vector<vector<bool> >& bottom_need_backward() const {
@@ -159,10 +159,10 @@ class Net {
     return layer_need_backward_;
   }
   /// @brief returns the parameters
-  inline const vector<shared_ptr<Blob<Dtype> > >& params() const {
+  inline const vector<shared_ptr<BlobBase> >& params() const {
     return params_;
   }
-  inline const vector<Blob<Dtype>*>& learnable_params() const {
+  inline const vector<BlobBase*>& learnable_params() const {
     return learnable_params_;
   }
   /// @brief returns the learnable parameter learning rate multipliers
@@ -185,7 +185,7 @@ class Net {
   inline const vector<Blob<Dtype>*>& input_blobs() const {
     return net_input_blobs_;
   }
-  inline const vector<Blob<Dtype>*>& output_blobs() const {
+  inline const vector<BlobBase*>& output_blobs() const {
     return net_output_blobs_;
   }
   inline const vector<int>& input_blob_indices() const {
@@ -195,11 +195,11 @@ class Net {
     return net_output_blob_indices_;
   }
   bool has_blob(const string& blob_name) const;
-  const shared_ptr<Blob<Dtype> > blob_by_name(const string& blob_name) const;
+  const shared_ptr<BlobBase> blob_by_name(const string& blob_name) const;
   void set_blob_by_name(const string& blob_name, shared_ptr<Blob<Dtype> >);
   void set_layer_by_name(const string& layer_name, shared_ptr<Layer<Dtype,Mtype> >);
   bool has_layer(const string& layer_name) const;
-  const shared_ptr<Layer<Dtype,Mtype> > layer_by_name(const string& layer_name) const;
+  const shared_ptr<LayerBase> layer_by_name(const string& layer_name) const;
 
   void set_debug_info(const bool value) { debug_info_ = value; }
 
@@ -272,10 +272,10 @@ class Net {
   vector<int> net_input_blob_indices_;
   vector<int> net_output_blob_indices_;
   vector<Blob<Dtype>*> net_input_blobs_;
-  vector<Blob<Dtype>*> net_output_blobs_;
+  vector<BlobBase*> net_output_blobs_;
   /// The parameters in the network.
-  vector<shared_ptr<Blob<Dtype> > > params_;
-  vector<Blob<Dtype>*> learnable_params_;
+  vector<shared_ptr<BlobBase> > params_;
+  vector<BlobBase*> learnable_params_;
   /**
    * The mapping from params_ -> learnable_params_: we have
    * learnable_param_ids_.size() == params_.size(),

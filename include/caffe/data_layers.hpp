@@ -35,8 +35,8 @@ class BaseDataLayer : public Layer<Dtype,Mtype> {
       const vector<BlobBase*>& top);
   // Data layers should be shared by multiple solvers in parallel
   virtual inline bool ShareInParallel() const { return true; }
-  virtual void DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {}
+  virtual void DataLayerSetUp(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top) {}
   // Data layers have no bottoms, so reshaping is trivial.
   virtual void Reshape(const vector<BlobBase*>& bottom,
       const vector<BlobBase*>& top);
@@ -93,8 +93,8 @@ class DataLayer : public BasePrefetchingDataLayer<Dtype,Mtype> {
  public:
   explicit DataLayer(const LayerParameter& param);
   virtual ~DataLayer();
-  virtual void DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
+  virtual void DataLayerSetUp(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top);
   // DataLayer uses DataReader instead for sharing for parallelism
   virtual inline bool ShareInParallel() const { return false; }
   virtual inline const char* type() const { return "Data"; }
@@ -240,8 +240,8 @@ class ImageDataLayer : public BasePrefetchingDataLayer<Dtype,Mtype> {
   explicit ImageDataLayer(const LayerParameter& param)
       : BasePrefetchingDataLayer<Dtype,Mtype>(param) {}
   virtual ~ImageDataLayer();
-  virtual void DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
+  virtual void DataLayerSetUp(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top);
 
   virtual inline const char* type() const { return "ImageData"; }
   virtual inline int ExactNumBottomBlobs() const { return 0; }
@@ -266,8 +266,8 @@ class MemoryDataLayer : public BaseDataLayer<Dtype,Mtype> {
  public:
   explicit MemoryDataLayer(const LayerParameter& param)
       : BaseDataLayer<Dtype,Mtype>(param), has_new_data_(false) {}
-  virtual void DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
+  virtual void DataLayerSetUp(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top);
 
   virtual inline const char* type() const { return "MemoryData"; }
   virtual inline int ExactNumBottomBlobs() const { return 0; }
@@ -315,8 +315,8 @@ class WindowDataLayer : public BasePrefetchingDataLayer<Dtype,Mtype> {
   explicit WindowDataLayer(const LayerParameter& param)
       : BasePrefetchingDataLayer<Dtype,Mtype>(param) {}
   virtual ~WindowDataLayer();
-  virtual void DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
+  virtual void DataLayerSetUp(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top);
 
   virtual inline const char* type() const { return "WindowData"; }
   virtual inline int ExactNumBottomBlobs() const { return 0; }

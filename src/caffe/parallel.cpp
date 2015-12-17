@@ -28,7 +28,7 @@ enum Op {
 };
 
 template<typename Dtype>
-static void apply_buffers(const vector<Blob<Dtype>*>& blobs,
+static void apply_buffers(const vector<BlobBase*>& blobs,
                           Dtype* buffer, size_t total_size, Op op) {
   Dtype* ptr = buffer;
   for (int i = 0; i < blobs.size(); ++i) {
@@ -72,8 +72,7 @@ static size_t total_size(const vector<shared_ptr<Blob<Dtype> > >& params) {
 }
 
 // Buffer size necessary to store given blobs
-template<typename Dtype, typename Mtype>
-static size_t total_size(const vector<Blob<Dtype>*>& params) {
+static size_t total_size(const vector<BlobBase*>& params) {
   size_t size = 0;
   for (int i = 0; i < params.size(); ++i)
     size += params[i]->count();
@@ -84,7 +83,7 @@ static size_t total_size(const vector<Blob<Dtype>*>& params) {
 
 template<typename Dtype, typename Mtype>
 Params<Dtype,Mtype>::Params(shared_ptr<Solver<Dtype,Mtype> > root_solver)
-    : size_(total_size<Dtype,Mtype>(root_solver->net()->learnable_params())),
+    : size_(total_size(root_solver->net()->learnable_params())),
       data_(),
       diff_() {
 }
@@ -104,7 +103,7 @@ GPUParams<Dtype,Mtype>::GPUParams(shared_ptr<Solver<Dtype,Mtype> > root_solver, 
                            size_ * sizeof(Dtype));
 
   // Copy blob values
-  const vector<Blob<Dtype>*>& net =
+  const vector<BlobBase*>& net =
       root_solver->net()->learnable_params();
   apply_buffers(net, data_, size_, copy);
 
@@ -135,7 +134,7 @@ GPUParams<Dtype,Mtype>::~GPUParams() {
 
 template<typename Dtype, typename Mtype>
 void GPUParams<Dtype,Mtype>::configure(Solver<Dtype,Mtype>* solver) const {
-  const vector<Blob<Dtype>*>& net =
+  const vector<BlobBase*>& net =
       solver->net()->learnable_params();
   apply_buffers(net, data_, size_, replace_gpu);
   apply_buffers(net, diff_, size_, replace_gpu_diff);

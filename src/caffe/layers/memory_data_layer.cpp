@@ -11,8 +11,8 @@
 namespace caffe {
 
 template <typename Dtype, typename Mtype>
-void MemoryDataLayer<Dtype,Mtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
-     const vector<Blob<Dtype>*>& top) {
+void MemoryDataLayer<Dtype,Mtype>::DataLayerSetUp(const vector<BlobBase*>& bottom,
+     const vector<BlobBase*>& top) {
   batch_size_ = this->layer_param_.memory_data_param().batch_size();
   channels_ = this->layer_param_.memory_data_param().channels();
   height_ = this->layer_param_.memory_data_param().height();

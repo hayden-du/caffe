@@ -27,8 +27,8 @@ DataLayer<Dtype,Mtype>::~DataLayer() {
 }
 
 template <typename Dtype, typename Mtype>
-void DataLayer<Dtype,Mtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+void DataLayer<Dtype,Mtype>::DataLayerSetUp(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top) {
   const int batch_size = this->layer_param_.data_param().batch_size();
 
   // Read a data point, and use it to initialize the top blob.

@@ -31,14 +31,6 @@ void hdf5_load_nd_dataset(hid_t file_id, const char* dataset_name,
     std::vector<float> buf(count);
     status = hdf5_load(file_id, dataset_name, &buf.front());
     caffe_cpu_convert(count, &buf.front(), blob->mutable_cpu_data());
-
-//    for (int i = 0; i < count; ++i) {
-//      printf("%g ", (float) blob->mutable_cpu_data()[i]);
-//    }
-//    printf("\n");
-
-
-
   }
   CHECK_GE(status, 0) << "Failed to read dataset " << dataset_name;
 }

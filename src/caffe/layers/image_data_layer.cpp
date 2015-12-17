@@ -22,8 +22,8 @@ ImageDataLayer<Dtype,Mtype>::~ImageDataLayer<Dtype,Mtype>() {
 }
 
 template <typename Dtype, typename Mtype>
-void ImageDataLayer<Dtype,Mtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+void ImageDataLayer<Dtype,Mtype>::DataLayerSetUp(const vector<BlobBase*>& bottom,
+      const vector<BlobBase*>& top) {
   const int new_height = this->layer_param_.image_data_param().new_height();
   const int new_width  = this->layer_param_.image_data_param().new_width();
   const bool is_color  = this->layer_param_.image_data_param().is_color();

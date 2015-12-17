@@ -46,7 +46,7 @@ void PReLULayer<Dtype,Mtype>::Forward_gpu(const vector<BlobBase*>& bottom,
   const int count = bottom[0]->count();
   const int dim = bottom[0]->count(2);
   const int channels = bottom[0]->channels();
-  const Dtype* slope_data = this->blobs_[0]->gpu_data();
+  const Dtype* slope_data = this->blobs_[0]->template gpu_data<Dtype>();
   const int div_factor = channel_shared_ ? channels : 1;
 
   // For in-place computation
@@ -80,7 +80,7 @@ void PReLULayer<Dtype,Mtype>::Backward_gpu(const vector<BlobBase*>& top,
   // are identical (in-place computaion), we first compute param backward to
   // keep top_diff unchanged.
   if (this->param_propagate_down_[0]) {
-    Dtype* slope_diff = this->blobs_[0]->mutable_gpu_diff();
+    Dtype* slope_diff = this->blobs_[0]->template mutable_gpu_diff<Dtype>();
     // slope_diff is set as 0, then accumulated over batches
     caffe_gpu_set<Dtype,Mtype>(this->blobs_[0]->count(), Mtype(0), slope_diff);
     int cdim = channels * dim;
@@ -112,7 +112,7 @@ void PReLULayer<Dtype,Mtype>::Backward_gpu(const vector<BlobBase*>& top,
   // Propagate to bottom
   if (propagate_down[0]) {
     Dtype* bottom_diff = bottom[0]->mutable_gpu_diff<Dtype>();
-    const Dtype* slope_data = this->blobs_[0]->gpu_data();
+    const Dtype* slope_data = this->blobs_[0]->template gpu_data<Dtype>();
     int div_factor = channel_shared_ ? channels : 1;
     // NOLINT_NEXT_LINE(whitespace/operators)
     PReLUBackward<Dtype,Mtype><<<CAFFE_GET_BLOCKS(count),
