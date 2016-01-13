@@ -887,6 +887,9 @@ void caffe_gpu_convert(const int n, const T_IN* in, T_OUT* out)
   convert_kernel<T_IN,T_OUT><<<n / 512 + 1, 512>>>(n, in, out);
 }
 
+template void caffe_gpu_convert<float,float16>(const int n, const float* in, float16* out);
+template void caffe_gpu_convert<float16,float>(const int n, const float16* in, float* out);
+
 void caffe_gpu_rng_uniform(const int n, unsigned int* r) {
   CURAND_CHECK(curandGenerate(Caffe::curand_generator(), r, n));
 }

@@ -65,6 +65,10 @@ class __Registerer_##func { \
 __Registerer_##func g_registerer_##func; \
 }
 
+// Hack to convert macro to string
+#define STRINGIZE(m) #m
+#define STRINGIZE2(m) STRINGIZE(m)
+
 static BrewFunction GetBrewFunction(const caffe::string& name) {
   if (g_brew_map.count(name)) {
     return g_brew_map[name];
@@ -150,6 +154,7 @@ caffe::SolverAction::Enum GetRequestedAction(
     return caffe::SolverAction::NONE;
   }
   LOG(FATAL) << "Invalid signal effect \""<< flag_value << "\" was specified";
+  return caffe::SolverAction::NONE;
 }
 
 // Train / Finetune a model.
@@ -222,6 +227,7 @@ int train() {
 }
 RegisterBrewFunction(train);
 
+
 // Test: score a model.
 int test() {
   CHECK_GT(FLAGS_model.size(), 0) << "Need a model definition to score.";
@@ -238,6 +244,7 @@ int test() {
     LOG(INFO) << "Use CPU.";
     Caffe::set_mode(Caffe::CPU);
   }
+
   // Instantiate the caffe net.
   Net<float16,CAFFE_FP16_MTYPE> caffe_net(FLAGS_model, caffe::TEST);
   caffe_net.CopyTrainedLayersFrom(FLAGS_weights);
@@ -305,6 +312,7 @@ int time() {
     LOG(INFO) << "Use CPU.";
     Caffe::set_mode(Caffe::CPU);
   }
+
   // Instantiate the caffe net.
   Net<float16,CAFFE_FP16_MTYPE> caffe_net(FLAGS_model, caffe::TRAIN);
 
@@ -316,57 +324,62 @@ int time() {
   CAFFE_FP16_MTYPE initial_loss;
   caffe_net.Forward(vector<Blob<float16>*>(), &initial_loss);
   LOG(INFO) << "Initial loss: " << initial_loss;
+  LOG(INFO) << "Performing Backward";
+  caffe_net.Backward();
 
   const vector<shared_ptr<Layer<float16,CAFFE_FP16_MTYPE> > >& layers = caffe_net.layers();
   const vector<vector<Blob<float16>*> >& bottom_vecs = caffe_net.bottom_vecs();
   const vector<vector<Blob<float16>*> >& top_vecs = caffe_net.top_vecs();
+  const vector<vector<bool> >& bottom_need_backward =  caffe_net.bottom_need_backward();
+
   LOG(INFO) << "*** Benchmark begins ***";
   LOG(INFO) << "Testing for " << FLAGS_iterations << " iterations.";
   Timer total_timer;
   total_timer.Start();
   Timer forward_timer;
+  Timer backward_timer;
   Timer timer;
   std::vector<double> forward_time_per_layer(layers.size(), 0.0);
+  std::vector<double> backward_time_per_layer(layers.size(), 0.0);
   double forward_time = 0.0;
-  // Per layer timing
+  double backward_time = 0.0;
   for (int j = 0; j < FLAGS_iterations; ++j) {
     Timer iter_timer;
     iter_timer.Start();
-    // Time forward layers
+    forward_timer.Start();
     for (int i = 0; i < layers.size(); ++i) {
       timer.Start();
       layers[i]->Forward(bottom_vecs[i], top_vecs[i]);
       forward_time_per_layer[i] += timer.MicroSeconds();
     }
-    LOG(INFO) << "Iteration: " << j + 1 << " forward time (layer by layer): "
-	      << iter_timer.MilliSeconds() << " ms.";
-  }
-  // Total timing - remove overheads introduced in timing individual layers
-  total_timer.Start();
-  for (int j = 0; j < FLAGS_iterations; ++j) {
-    Timer iter_timer;
-    iter_timer.Start();
-    // Time total forward
-    forward_timer.Start();
-    for (int i = 0; i < layers.size(); ++i) {
-      layers[i]->Forward(bottom_vecs[i], top_vecs[i]);
-    }
     forward_time += forward_timer.MicroSeconds();
-    
+    backward_timer.Start();
+    for (int i = layers.size() - 1; i >= 0; --i) {
+      timer.Start();
+      layers[i]->Backward(top_vecs[i], bottom_need_backward[i],
+                          bottom_vecs[i]);
+      backward_time_per_layer[i] += timer.MicroSeconds();
+    }
+    backward_time += backward_timer.MicroSeconds();
     LOG(INFO) << "Iteration: " << j + 1 << " forward-backward time: "
-	      << iter_timer.MilliSeconds() << " ms.";
+      << iter_timer.MilliSeconds() << " ms.";
   }
-  total_timer.Stop();
-  
   LOG(INFO) << "Average time per layer: ";
   for (int i = 0; i < layers.size(); ++i) {
     const caffe::string& layername = layers[i]->layer_param().name();
     LOG(INFO) << std::setfill(' ') << std::setw(10) << layername <<
       "\tforward: " << forward_time_per_layer[i] / 1000 /
       FLAGS_iterations << " ms.";
+    LOG(INFO) << std::setfill(' ') << std::setw(10) << layername  <<
+      "\tbackward: " << backward_time_per_layer[i] / 1000 /
+      FLAGS_iterations << " ms.";
   }
-
+  total_timer.Stop();
   LOG(INFO) << "Average Forward pass: " << forward_time / 1000 /
+    FLAGS_iterations << " ms.";
+  LOG(INFO) << "Average Backward pass: " << backward_time / 1000 /
+    FLAGS_iterations << " ms.";
+  LOG(INFO) << "Average Forward-Backward: " << total_timer.MilliSeconds() /
     FLAGS_iterations << " ms.";
   LOG(INFO) << "Total Time: " << total_timer.MilliSeconds() << " ms.";
   LOG(INFO) << "*** Benchmark ends ***";
@@ -384,19 +397,24 @@ int main(int argc, char** argv) {
 #else
   FLAGS_alsologtostderr = 1;
 #endif
+  // Set version
+  gflags::SetVersionString(STRINGIZE2(CAFFE_VERSION));
   // Usage message.
   gflags::SetUsageMessage("command line brew\n"
       "usage: caffe <command> <args>\n\n"
       "commands:\n"
+      "  train           train or finetune a model\n"
       "  test            score a model\n"
       "  device_query    show GPU diagnostic information\n"
       "  time            benchmark model execution time");
   // Run tool or show usage.
   caffe::GlobalInit(&argc, &argv);
 
+
+  // initialize gpu memory arena
   vector<int> gpus;
   get_gpus(&gpus);
-  caffe::gpu_memory::arena arena(gpus,caffe::gpu_memory::CnMemPool /* , true */);
+  caffe::gpu_memory::arena arena(gpus, caffe::gpu_memory::DefaultPool, false);
 
   if (argc == 2) {
 #ifdef WITH_PYTHON_LAYER

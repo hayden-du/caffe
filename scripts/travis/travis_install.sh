@@ -23,7 +23,7 @@ apt-get install \
 # Caffe requires a minimum CMake version of 2.8.8.
 if $WITH_CMAKE; then
   # cmake 3 will make sure that the python interpreter and libraries match
-  wget http://www.cmake.org/files/v3.2/cmake-3.2.3-Linux-x86_64.sh -O cmake3.sh
+  wget --no-check-certificate http://www.cmake.org/files/v3.2/cmake-3.2.3-Linux-x86_64.sh -O cmake3.sh
   chmod +x cmake3.sh
   ./cmake3.sh --prefix=/usr/ --skip-license --exclude-subdir
 fi
@@ -70,6 +70,10 @@ if [ ! -d $CONDA_DIR ]; then
 	./miniconda.sh -b -p $CONDA_DIR
 	
 	conda update --yes conda
+	# The version of boost we're using for Python 3 depends on 3.4 for now.
+	if [ "$PYTHON_VERSION" -eq "3" ]; then
+		conda install --yes python=3.4
+	fi
 	conda install --yes numpy scipy matplotlib scikit-image pip
 	# Let conda install boost (so that boost_python matches)
 	conda install --yes -c https://conda.binstar.org/menpo boost=1.56.0

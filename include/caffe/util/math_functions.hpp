@@ -13,12 +13,15 @@
 namespace caffe {
 
 template <typename T_IN, typename T_OUT>
-void caffe_cpu_convert(const size_t N, const T_IN *in, T_OUT *out)
+void caffe_cpu_convert(const int n, const T_IN *in, T_OUT *out)
 {
-  for (size_t i = 0; i < N; ++i) {
+  for (int i = 0; i < n; ++i) {
     out[i] = in[i];
   }
 }
+
+template <typename T_IN, typename T_OUT>
+void caffe_gpu_convert(const int n, const T_IN* in, T_OUT* out);
 
 // Caffe gemm provides a simpler interface to the gemm functions, with the
 // limitation that the data has to be contiguous in memory.

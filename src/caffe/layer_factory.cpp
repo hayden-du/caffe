@@ -39,6 +39,29 @@ shared_ptr<LayerBase> GetConvolutionLayer(
 
 REGISTER_LAYER_CREATOR(Convolution, GetConvolutionLayer);
 
+// Get BN layer according to engine.
+template <typename Dtype, typename Mtype>
+shared_ptr<Layer<Dtype,Mtype> > GetBatchNormLayer(const LayerParameter& param) {
+  BatchNormParameter_Engine engine = param.batch_norm_param().engine();
+  if (engine == BatchNormParameter_Engine_DEFAULT) {
+    engine = BatchNormParameter_Engine_CAFFE;
+#ifdef USE_CUDNN
+    engine = BatchNormParameter_Engine_CUDNN;
+#endif
+  }
+  if (engine == BatchNormParameter_Engine_CAFFE) {
+    return shared_ptr<Layer<Dtype,Mtype> >(new BatchNormLayer<Dtype,Mtype>(param));
+#ifdef USE_CUDNN
+  } else if (engine == BatchNormParameter_Engine_CUDNN) {
+    return shared_ptr<Layer<Dtype,Mtype> >(new CuDNNBatchNormLayer<Dtype,Mtype>(param));
+#endif
+  } else {
+    LOG(FATAL) << "Layer " << param.name() << " has unknown engine.";
+  }
+}
+
+REGISTER_LAYER_CREATOR(BatchNorm, GetBatchNormLayer);
+
 // Get pooling layer according to engine.
 shared_ptr<LayerBase> GetPoolingLayer(const LayerParameter& param) {
   PoolingParameter_Engine engine = param.pooling_param().engine();

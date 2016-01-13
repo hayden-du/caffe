@@ -62,6 +62,9 @@ function(caffe_generate_export_configs)
 
   if(USE_LMDB)
     list(APPEND Caffe_DEFINITIONS -DUSE_LMDB)
+    if (ALLOW_LMDB_NOLOCK)
+        list(APPEND Caffe_DEFINITIONS -DALLOW_LMDB_NOLOCK)
+    endif()
   endif()
 
   if(USE_LEVELDB)
@@ -72,12 +75,6 @@ function(caffe_generate_export_configs)
     set(HAVE_CUDNN FALSE)
   else()
     list(APPEND DEFINITIONS -DUSE_CUDNN)
-  endif()
-
-  if(NOT HAVE_CNMEM)
-    set(HAVE_CNMEM FALSE)
-  else()
-    list(APPEND DEFINITIONS -DUSE_CNMEM)
   endif()
 
   if(BLAS STREQUAL "MKL" OR BLAS STREQUAL "mkl")

@@ -3,6 +3,7 @@
 namespace bp = boost::python;
 #endif
 
+#include <gflags/gflags.h>
 #include <glog/logging.h>
 
 #include <cstring>
@@ -64,6 +65,10 @@ class __Registerer_##func { \
 }; \
 __Registerer_##func g_registerer_##func; \
 }
+
+// Hack to convert macro to string
+#define STRINGIZE(m) #m
+#define STRINGIZE2(m) STRINGIZE(m)
 
 static BrewFunction GetBrewFunction(const caffe::string& name) {
   if (g_brew_map.count(name)) {
@@ -239,6 +244,7 @@ int test() {
     LOG(INFO) << "Use CPU.";
     Caffe::set_mode(Caffe::CPU);
   }
+
   // Instantiate the caffe net.
   Net<float,float> caffe_net(FLAGS_model, caffe::TEST);
   caffe_net.CopyTrainedLayersFrom(FLAGS_weights);
@@ -306,6 +312,7 @@ int time() {
     LOG(INFO) << "Use CPU.";
     Caffe::set_mode(Caffe::CPU);
   }
+
   // Instantiate the caffe net.
   Net<float,float> caffe_net(FLAGS_model, caffe::TRAIN);
 
@@ -336,52 +343,27 @@ int time() {
   std::vector<double> backward_time_per_layer(layers.size(), 0.0);
   double forward_time = 0.0;
   double backward_time = 0.0;
-  // Per layer timing
   for (int j = 0; j < FLAGS_iterations; ++j) {
     Timer iter_timer;
     iter_timer.Start();
-    // Time forward layers
+    forward_timer.Start();
     for (int i = 0; i < layers.size(); ++i) {
       timer.Start();
       layers[i]->Forward(bottom_vecs[i], top_vecs[i]);
       forward_time_per_layer[i] += timer.MicroSeconds();
     }
-    // Time backward layers
+    forward_time += forward_timer.MicroSeconds();
+    backward_timer.Start();
     for (int i = layers.size() - 1; i >= 0; --i) {
       timer.Start();
       layers[i]->Backward(top_vecs[i], bottom_need_backward[i],
                           bottom_vecs[i]);
       backward_time_per_layer[i] += timer.MicroSeconds();
     }
-    LOG(INFO) << "Iteration: " << j + 1 << " forward-backward time (layer by layer): "
-	      << iter_timer.MilliSeconds() << " ms.";
-  }
-  // Total timing - remove overheads introduced in timing individual layers
-  total_timer.Start();
-  for (int j = 0; j < FLAGS_iterations; ++j) {
-    Timer iter_timer;
-    iter_timer.Start();
-    // Time total forward
-    forward_timer.Start();
-    for (int i = 0; i < layers.size(); ++i) {
-      layers[i]->Forward(bottom_vecs[i], top_vecs[i]);
-    }
-    forward_time += forward_timer.MicroSeconds();
-    
-    // Time total backward
-    backward_timer.Start();
-    for (int i = layers.size() - 1; i >= 0; --i) {
-      layers[i]->Backward(top_vecs[i], bottom_need_backward[i],
-                          bottom_vecs[i]);
-    }
     backward_time += backward_timer.MicroSeconds();
-    
-    
     LOG(INFO) << "Iteration: " << j + 1 << " forward-backward time: "
-	      << iter_timer.MilliSeconds() << " ms.";
+      << iter_timer.MilliSeconds() << " ms.";
   }
-  total_timer.Stop();
-  
   LOG(INFO) << "Average time per layer: ";
   for (int i = 0; i < layers.size(); ++i) {
     const caffe::string& layername = layers[i]->layer_param().name();
@@ -392,12 +374,12 @@ int time() {
       "\tbackward: " << backward_time_per_layer[i] / 1000 /
       FLAGS_iterations << " ms.";
   }
-
+  total_timer.Stop();
   LOG(INFO) << "Average Forward pass: " << forward_time / 1000 /
     FLAGS_iterations << " ms.";
   LOG(INFO) << "Average Backward pass: " << backward_time / 1000 /
     FLAGS_iterations << " ms.";
-  LOG(INFO) << "Average Forward-Backward: " << (forward_time + backward_time) / 1000 /
+  LOG(INFO) << "Average Forward-Backward: " << total_timer.MilliSeconds() /
     FLAGS_iterations << " ms.";
   LOG(INFO) << "Total Time: " << total_timer.MilliSeconds() << " ms.";
   LOG(INFO) << "*** Benchmark ends ***";
@@ -414,6 +396,8 @@ int main(int argc, char** argv) {
 #else
   FLAGS_alsologtostderr = 1;
 #endif
+  // Set version
+  gflags::SetVersionString(STRINGIZE2(CAFFE_VERSION));
   // Usage message.
   gflags::SetUsageMessage("command line brew\n"
       "usage: caffe <command> <args>\n\n"
@@ -425,9 +409,11 @@ int main(int argc, char** argv) {
   // Run tool or show usage.
   caffe::GlobalInit(&argc, &argv);
 
+
+  // initialize gpu memory arena
   vector<int> gpus;
   get_gpus(&gpus);
-  caffe::gpu_memory::arena arena(gpus, caffe::gpu_memory::CubPool);
+  caffe::gpu_memory::arena arena(gpus, caffe::gpu_memory::DefaultPool, false);
 
   if (argc == 2) {
 #ifdef WITH_PYTHON_LAYER

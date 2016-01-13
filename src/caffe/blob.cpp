@@ -49,10 +49,7 @@ void BlobBase::Reshape(const BlobShape& shape) {
   Reshape(shape_vec);
 }
 
-void BlobBase::ReshapeLike(const BlobBase& other) {
-  Reshape(other.shape());
-}
-
+//template <typename Dtype>
 BlobBase::BlobBase(const int num, const int channels, const int height,
     const int width)
   // capacity_ must be initialized before calling Reshape

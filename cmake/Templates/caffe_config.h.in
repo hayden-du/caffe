@@ -10,10 +10,6 @@
 /* NVIDA cuDNN */
 #cmakedefine HAVE_CUDNN
 #cmakedefine USE_CUDNN
-
-/* NVIDIA CNMeM */
-#cmakedefine HAVE_CNMEM
-#cmakedefine USE_CNMEM
  
 /* NVIDA cuDNN */
 #cmakedefine CPU_ONLY
@@ -37,5 +33,6 @@
 
 /* IO libraries */
 #cmakedefine USE_OPENCV
-#cmakedefine USE_LMDB
 #cmakedefine USE_LEVELDB
+#cmakedefine USE_LMDB
+#cmakedefine ALLOW_LMDB_NOLOCK

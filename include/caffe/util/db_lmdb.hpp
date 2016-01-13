@@ -11,14 +11,12 @@
 
 namespace caffe { namespace db {
 
-#if UINTPTR_MAX == 0xffffffff
-/* 32-bit */
-const size_t LMDB_MAP_SIZE = 1073741824;  // 1 GB
-#elif UINTPTR_MAX == 0xffffffffffffffff
-/* 64-bit */
-const size_t LMDB_MAP_SIZE = 1099511627776;  // 1 TB
+#if UINTPTR_MAX == 0xffffffffUL
+/* 32-bit, 1GB */
+    static const size_t LMDB_MAP_SIZE = 1073741824UL;
 #else
-#  error "Bad stdint.h!"
+/* 64-bit, 1TB */
+    static const size_t LMDB_MAP_SIZE = 1099511627776ULL;
 #endif
 
 inline void MDB_CHECK(int mdb_status) {

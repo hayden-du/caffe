@@ -55,7 +55,11 @@ class BlobBase {
    */
   void Reshape(const vector<int>& shape);
   void Reshape(const BlobShape& shape);
-  void ReshapeLike(const BlobBase& other);
+
+  void ReshapeLike(const Blob<Base &other) {
+    Reshape(other.shape());
+  }
+
   inline string shape_string() const {
     ostringstream stream;
     for (int i = 0; i < shape_.size(); ++i) {
