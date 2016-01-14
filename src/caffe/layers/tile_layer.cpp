@@ -24,8 +24,8 @@ void TileLayer<Dtype,Mtype>::Reshape(
 template <typename Dtype, typename Mtype>
 void TileLayer<Dtype,Mtype>::Forward_cpu(
     const vector<BlobBase*>& bottom, const vector<BlobBase*>& top) {
-  const Dtype* bottom_data = bottom[0]->cpu_data<Dtype>();
-  Dtype* top_data = top[0]->mutable_cpu_data<Dtype>();
+  const Dtype* bottom_data = bottom[0]->cpu_data_base<Dtype>();
+  Dtype* top_data = top[0]->mutable_cpu_data_base<Dtype>();
   for (int i = 0; i < outer_dim_; ++i) {
     for (int t = 0; t < tiles_; ++t) {
       caffe_copy(inner_dim_, bottom_data, top_data);
@@ -39,8 +39,8 @@ template <typename Dtype, typename Mtype>
 void TileLayer<Dtype,Mtype>::Backward_cpu(const vector<BlobBase*>& top,
     const vector<bool>& propagate_down, const vector<BlobBase*>& bottom) {
   if (!propagate_down[0]) { return; }
-  const Dtype* top_diff = top[0]->cpu_diff<Dtype>();
-  Dtype* bottom_diff = bottom[0]->mutable_cpu_diff<Dtype>();
+  const Dtype* top_diff = top[0]->cpu_diff_base<Dtype>();
+  Dtype* bottom_diff = bottom[0]->mutable_cpu_diff_base<Dtype>();
   for (int i = 0; i < outer_dim_; ++i) {
     caffe_copy(inner_dim_, top_diff, bottom_diff);
     top_diff += inner_dim_;

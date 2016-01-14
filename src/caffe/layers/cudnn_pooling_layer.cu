@@ -12,8 +12,8 @@ namespace caffe {
 template <typename Dtype, typename Mtype>
 void CuDNNPoolingLayer<Dtype,Mtype>::Forward_gpu(const vector<BlobBase*>& bottom,
     const vector<BlobBase*>& top) {
-  const Dtype* bottom_data = bottom[0]->gpu_data<Dtype>();
-  Dtype* top_data = top[0]->mutable_gpu_data<Dtype>();
+  const Dtype* bottom_data = bottom[0]->gpu_data_base<Dtype>();
+  Dtype* top_data = top[0]->mutable_gpu_data_base<Dtype>();
   CUDNN_CHECK(cudnnPoolingForward(Caffe::cudnn_handle(), pooling_desc_,
         cudnn::dataType<Dtype>::one,
         bottom_desc_, bottom_data,
@@ -27,10 +27,10 @@ void CuDNNPoolingLayer<Dtype,Mtype>::Backward_gpu(const vector<BlobBase*>& top,
   if (!propagate_down[0]) {
     return;
   }
-  const Dtype* top_diff = top[0]->gpu_diff<Dtype>();
-  const Dtype* top_data = top[0]->gpu_data<Dtype>();
-  const Dtype* bottom_data = bottom[0]->gpu_data<Dtype>();
-  Dtype* bottom_diff = bottom[0]->mutable_gpu_diff<Dtype>();
+  const Dtype* top_diff = top[0]->gpu_diff_base<Dtype>();
+  const Dtype* top_data = top[0]->gpu_data_base<Dtype>();
+  const Dtype* bottom_data = bottom[0]->gpu_data_base<Dtype>();
+  Dtype* bottom_diff = bottom[0]->mutable_gpu_diff_base<Dtype>();
   CUDNN_CHECK(cudnnPoolingBackward(Caffe::cudnn_handle(), pooling_desc_,
         cudnn::dataType<Dtype>::one,
         top_desc_, top_data, top_desc_, top_diff,

@@ -23,8 +23,8 @@ __global__ void DropoutForward(const int n, const Dtype* in,
 template <typename Dtype, typename Mtype>
 void DropoutLayer<Dtype,Mtype>::Forward_gpu(const vector<BlobBase*>& bottom,
     const vector<BlobBase*>& top) {
-  const Dtype* bottom_data = bottom[0]->gpu_data<Dtype>();
-  Dtype* top_data = top[0]->mutable_gpu_data<Dtype>();
+  const Dtype* bottom_data = bottom[0]->gpu_data_base<Dtype>();
+  Dtype* top_data = top[0]->mutable_gpu_data_base<Dtype>();
   const int count = bottom[0]->count();
   if (this->phase_ == TRAIN) {
     unsigned int* mask =
@@ -54,8 +54,8 @@ void DropoutLayer<Dtype,Mtype>::Backward_gpu(const vector<BlobBase*>& top,
     const vector<bool>& propagate_down,
     const vector<BlobBase*>& bottom) {
   if (propagate_down[0]) {
-    const Dtype* top_diff = top[0]->gpu_diff<Dtype>();
-    Dtype* bottom_diff = bottom[0]->mutable_gpu_diff<Dtype>();
+    const Dtype* top_diff = top[0]->gpu_diff_base<Dtype>();
+    Dtype* bottom_diff = bottom[0]->mutable_gpu_diff_base<Dtype>();
     if (this->phase_ == TRAIN) {
       const unsigned int* mask =
           static_cast<const unsigned int*>(rand_vec_.gpu_data());

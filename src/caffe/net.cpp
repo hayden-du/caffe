@@ -161,7 +161,7 @@ void Net<Dtype,Mtype>::Init(const NetParameter& in_param) {
           << "Top shape: " << top_vecs_[layer_id][top_id]->shape_string();
       if (layer->loss<Dtype>(top_id) != 0.) {
         LOG_IF(INFO, Caffe::root_solver())
-          LOG(INFO) << "    with loss weight " << layer->loss<Dtype>(top_id);
+          << "    with loss weight " << layer->loss<Dtype>(top_id);
       }
       memory_used_ += top_vecs_[layer_id][top_id]->count();
     }
@@ -272,7 +272,7 @@ void Net<Dtype,Mtype>::Init(const NetParameter& in_param) {
       it != available_blobs.end(); ++it) {
     LOG_IF(INFO, Caffe::root_solver())
         << "This network produces output " << *it;
-    net_output_blobs_.push_back(blobs_[blob_name_to_idx[*it]].get());
+    net_output_blobs_.push_back(blobs_[blob_name_to_idx[*it]]->instance<Dtype>());
     net_output_blob_indices_.push_back(blob_name_to_idx[*it]);
   }
   for (size_t blob_id = 0; blob_id < blob_names_.size(); ++blob_id) {
@@ -997,12 +997,12 @@ void Net<Dtype,Mtype>::ClearParamDiffs() {
     switch (Caffe::mode()) {
     case Caffe::CPU:
       caffe_set(blob->count(), typedConsts<Dtype>::zero,
-                blob->mutable_cpu_diff<Dtype>());
+                blob->mutable_cpu_diff_base<Dtype>());
       break;
     case Caffe::GPU:
 #ifndef CPU_ONLY
       caffe_gpu_set<Dtype,Mtype>(blob->count(), 0,
-                    blob->mutable_gpu_diff<Dtype>());
+                    blob->mutable_gpu_diff_base<Dtype>());
 #else
       NO_GPU;
 #endif

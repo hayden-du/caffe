@@ -53,8 +53,8 @@ void ArgMaxLayer<Dtype,Mtype>::Reshape(const vector<BlobBase*>& bottom,
 template <typename Dtype, typename Mtype>
 void ArgMaxLayer<Dtype,Mtype>::Forward_cpu(const vector<BlobBase*>& bottom,
     const vector<BlobBase*>& top) {
-  const Dtype* bottom_data = bottom[0]->cpu_data<Dtype>();
-  Dtype* top_data = top[0]->mutable_cpu_data<Dtype>();
+  const Dtype* bottom_data = bottom[0]->cpu_data_base<Dtype>();
+  Dtype* top_data = top[0]->mutable_cpu_data_base<Dtype>();
   int dim, axis_dist;
   if (has_axis_) {
     dim = bottom[0]->shape(axis_);

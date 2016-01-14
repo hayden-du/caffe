@@ -51,8 +51,8 @@ void AccuracyLayer<Dtype,Mtype>::Reshape(
 template <typename Dtype, typename Mtype>
 void AccuracyLayer<Dtype,Mtype>::Forward_cpu(const vector<BlobBase*>& bottom,
     const vector<BlobBase*>& top) {
-  const Dtype* bottom_data = bottom[0]->cpu_data<Dtype>();
-  const Dtype* bottom_label = bottom[1]->cpu_data<Dtype>();
+  const Dtype* bottom_data = bottom[0]->cpu_data_base<Dtype>();
+  const Dtype* bottom_label = bottom[1]->cpu_data_base<Dtype>();
   const int dim = bottom[0]->count() / outer_num_;
   const int num_labels = bottom[0]->shape(label_axis_);
 
@@ -103,7 +103,7 @@ void AccuracyLayer<Dtype,Mtype>::Forward_cpu(const vector<BlobBase*>& bottom,
 
   // LOG(INFO) << "Accuracy: " << accuracy;
   double ratio = (double) validCount / count;
-  top[0]->mutable_cpu_data<Dtype>()[0] = ratio;
+  top[0]->mutable_cpu_data_base<Dtype>()[0] = ratio;
   if (top.size() > 1) {
     for (int i = 0; i < top[1]->count(); ++i) {
         ratio = 
@@ -111,7 +111,7 @@ void AccuracyLayer<Dtype,Mtype>::Forward_cpu(const vector<BlobBase*>& bottom,
             0.0 : 
             (double) valid_counts_.cpu_data()[i] / counts_.cpu_data()[i];
 
-      top[1]->mutable_cpu_data<Dtype>()[i] = (Dtype) ratio;
+      top[1]->mutable_cpu_data_base<Dtype>()[i] = (Dtype) ratio;
     }
   }
   // Accuracy layer should not be used as a loss function.

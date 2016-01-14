@@ -15,11 +15,11 @@ namespace caffe {
 
 template <typename Dtype, typename Mtype>
 void CuDNNBatchNormLayer<Dtype,Mtype>::Forward_gpu(
-    const vector<Blob<Dtype>*>& bottom,
-    const vector<Blob<Dtype>*>& top) {
-  const Dtype* bottom_data = bottom[0]->gpu_data();
-  const void* scale_data = this->blobs_[0]->gpu_data();
-  const void* bias_data = this->blobs_[1]->gpu_data();
+    const vector<BlobBase*>& bottom,
+    const vector<BlobBase*>& top) {
+  const Dtype* bottom_data = bottom[0]->gpu_data_base<Dtype>();
+  const void* scale_data = this->blobs_[0]->template gpu_data_base<Dtype>();
+  const void* bias_data = this->blobs_[1]->template gpu_data_base<Dtype>();
 
   cudnnTensorDescriptor_t sbdesc = scale_bias_mean_var_desc_;
   Blob<float> f_scale_data, f_bias_data;
@@ -30,15 +30,17 @@ void CuDNNBatchNormLayer<Dtype,Mtype>::Forward_gpu(
     sbdesc = &fdesc;
     f_scale_data.ReshapeLike(*this->blobs_[0]);
     f_bias_data.ReshapeLike(*this->blobs_[1]);
-    caffe_gpu_convert(f_scale_data.count(), this->blobs_[0]->gpu_data(),
+    caffe_gpu_convert(f_scale_data.count(),
+        this->blobs_[0]->template gpu_data_base<Dtype>(),
         f_scale_data.mutable_gpu_data());
-    caffe_gpu_convert(f_bias_data.count(), this->blobs_[1]->gpu_data(),
+    caffe_gpu_convert(f_bias_data.count(),
+        this->blobs_[1]->template gpu_data_base<Dtype>(),
         f_bias_data.mutable_gpu_data());
     scale_data = f_scale_data.gpu_data();
     bias_data = f_bias_data.gpu_data();
   }
 
-  Dtype* top_data = top[0]->mutable_gpu_data();
+  Dtype* top_data = top[0]->mutable_gpu_data_base<Dtype>();
   Dtype* save_mean = save_mean_.mutable_gpu_data();
   Dtype* save_inv_var = save_inv_var_.mutable_gpu_data();
 
@@ -57,8 +59,8 @@ void CuDNNBatchNormLayer<Dtype,Mtype>::Forward_gpu(
       scale_data,
       bias_data,
       1-this->moving_average_fraction_,
-      this->blobs_[3]->mutable_gpu_data(),  // mean
-      this->blobs_[4]->mutable_gpu_data(),  // variance
+      this->blobs_[3]->template mutable_gpu_data_base<Dtype>(),  // mean
+      this->blobs_[4]->template mutable_gpu_data_base<Dtype>(),  // variance
       epsilon_,
       save_mean,
       save_inv_var));
@@ -75,8 +77,8 @@ void CuDNNBatchNormLayer<Dtype,Mtype>::Forward_gpu(
       sbdesc, //scale_bias_mean_var_desc_,
       scale_data,
       bias_data,
-      this->blobs_[3]->gpu_data(),  // mean
-      this->blobs_[4]->gpu_data(),  // variance
+      this->blobs_[3]->template gpu_data_base<Dtype>(),  // mean
+      this->blobs_[4]->template gpu_data_base<Dtype>(),  // variance
       epsilon_));
   } else {
     LOG(FATAL) << "Unknown phase";
@@ -85,18 +87,18 @@ void CuDNNBatchNormLayer<Dtype,Mtype>::Forward_gpu(
 
 template <typename Dtype, typename Mtype>
 void CuDNNBatchNormLayer<Dtype,Mtype>::Backward_gpu(
-    const vector<Blob<Dtype>*>& top,
-    const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
-  const Dtype* top_data = top[0]->gpu_data();
-  const Dtype* top_diff = top[0]->gpu_diff();
-  const Dtype* bottom_data = bottom[0]->gpu_data();
+    const vector<BlobBase*>& top,
+    const vector<bool>& propagate_down, const vector<BlobBase*>& bottom) {
+  const Dtype* top_data = top[0]->gpu_data_base<Dtype>();
+  const Dtype* top_diff = top[0]->gpu_diff_base<Dtype>();
+  const Dtype* bottom_data = bottom[0]->gpu_data_base<Dtype>();
   const Dtype* save_mean = save_mean_.gpu_data();
   const Dtype* save_inv_var = save_inv_var_.gpu_data();
 
-  Dtype* bottom_diff = bottom[0]->mutable_gpu_diff();
-  const void* scale_data = this->blobs_[0]->gpu_data();
-  void* scale_diff = this->blobs_[0]->mutable_gpu_diff();
-  void* bias_diff = this->blobs_[1]->mutable_gpu_diff();
+  Dtype* bottom_diff = bottom[0]->mutable_gpu_diff_base<Dtype>();
+  const void* scale_data = this->blobs_[0]->template gpu_data_base<Dtype>();
+  void* scale_diff = this->blobs_[0]->template mutable_gpu_diff_base<Dtype>();
+  void* bias_diff = this->blobs_[1]->template mutable_gpu_diff_base<Dtype>();
 
   cudnnTensorDescriptor_t sbdesc = scale_bias_mean_var_desc_;
   Blob<float> f_scale_data, f_scale_diff, f_bias_diff;
@@ -108,11 +110,14 @@ void CuDNNBatchNormLayer<Dtype,Mtype>::Backward_gpu(
     f_scale_data.ReshapeLike(*this->blobs_[0]);
     f_scale_diff.ReshapeLike(*this->blobs_[0]);
     f_bias_diff.ReshapeLike(*this->blobs_[1]);
-    caffe_gpu_convert(f_scale_data.count(), this->blobs_[0]->gpu_data(),
+    caffe_gpu_convert(f_scale_data.count(),
+        this->blobs_[0]->template gpu_data_base<Dtype>(),
         f_scale_data.mutable_gpu_data());
-    caffe_gpu_convert(f_scale_diff.count(), this->blobs_[0]->gpu_diff(),
+    caffe_gpu_convert(f_scale_diff.count(),
+        this->blobs_[0]->template gpu_diff_base<Dtype>(),
         f_scale_diff.mutable_gpu_diff());
-    caffe_gpu_convert(f_bias_diff.count(), this->blobs_[1]->gpu_diff(),
+    caffe_gpu_convert(f_bias_diff.count(),
+        this->blobs_[1]->template gpu_diff_base<Dtype>(),
         f_bias_diff.mutable_gpu_diff());
     scale_data = f_scale_data.gpu_data();
     scale_diff = f_scale_diff.mutable_gpu_diff();
@@ -141,9 +146,9 @@ void CuDNNBatchNormLayer<Dtype,Mtype>::Backward_gpu(
 
     if (sizeof(Dtype) < 4) {
       caffe_gpu_convert(f_scale_diff.count(), f_scale_diff.gpu_diff(),
-          this->blobs_[0]->mutable_gpu_diff());
+          this->blobs_[0]->template mutable_gpu_diff_base<Dtype>());
       caffe_gpu_convert(f_bias_diff.count(), f_bias_diff.gpu_diff(),
-          this->blobs_[1]->mutable_gpu_diff());
+          this->blobs_[1]->template mutable_gpu_diff_base<Dtype>());
     }
 }
 

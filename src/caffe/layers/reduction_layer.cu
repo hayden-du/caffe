@@ -10,12 +10,12 @@ namespace caffe {
 template <typename Dtype, typename Mtype>
 void ReductionLayer<Dtype,Mtype>::Forward_gpu(
     const vector<BlobBase*>& bottom, const vector<BlobBase*>& top) {
-  const Dtype* bottom_data = bottom[0]->gpu_data<Dtype>();
+  const Dtype* bottom_data = bottom[0]->gpu_data_base<Dtype>();
   const Dtype* mult_data = NULL;
   if (sum_multiplier_.count() > 0) {
     mult_data = sum_multiplier_.gpu_data();
   }
-  Dtype* top_data = top[0]->mutable_cpu_data<Dtype>();
+  Dtype* top_data = top[0]->mutable_cpu_data_base<Dtype>();
   for (int i = 0; i < num_; ++i) {
     switch (op_) {
     case ReductionParameter_ReductionOp_SUM:
@@ -37,7 +37,7 @@ void ReductionLayer<Dtype,Mtype>::Forward_gpu(
   }
   if (coeff_ != 1) {
     // Reset the top_data pointer.
-    top_data = top[0]->mutable_gpu_data<Dtype>();
+    top_data = top[0]->mutable_gpu_data_base<Dtype>();
     caffe_gpu_scal<Dtype,Mtype>(num_, coeff_, top_data);
   }
 }
@@ -56,14 +56,14 @@ void ReductionLayer<Dtype,Mtype>::Backward_gpu(const vector<BlobBase*>& top,
   // Operations that need bottom_data
   case ReductionParameter_ReductionOp_ASUM:
   case ReductionParameter_ReductionOp_SUMSQ:
-    bottom_data = bottom[0]->gpu_data<Dtype>();
+    bottom_data = bottom[0]->gpu_data_base<Dtype>();
     break;
   default:
     LOG(FATAL) << "Unknown reduction op: "
         << ReductionParameter_ReductionOp_Name(op_);
   }
-  const Dtype* top_diff = top[0]->cpu_diff<Dtype>();
-  Dtype* bottom_diff = bottom[0]->mutable_gpu_diff<Dtype>();
+  const Dtype* top_diff = top[0]->cpu_diff_base<Dtype>();
+  Dtype* bottom_diff = bottom[0]->mutable_gpu_diff_base<Dtype>();
   for (int i = 0; i < num_; ++i) {
     const Mtype bottom_coeff = (*top_diff) * coeff_;
     switch (op_) {

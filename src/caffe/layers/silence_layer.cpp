@@ -12,7 +12,7 @@ void SilenceLayer<Dtype,Mtype>::Backward_cpu(const vector<BlobBase*>& top,
   for (int i = 0; i < bottom.size(); ++i) {
     if (propagate_down[i]) {
       caffe_set(bottom[i]->count(), typedConsts<Dtype>::zero,
-                bottom[i]->mutable_cpu_diff<Dtype>());
+                bottom[i]->mutable_cpu_diff_base<Dtype>());
     }
   }
 }

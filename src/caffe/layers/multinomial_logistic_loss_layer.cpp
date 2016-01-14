@@ -22,8 +22,8 @@ void MultinomialLogisticLossLayer<Dtype,Mtype>::Reshape(
 template <typename Dtype, typename Mtype>
 void MultinomialLogisticLossLayer<Dtype,Mtype>::Forward_cpu(
     const vector<BlobBase*>& bottom, const vector<BlobBase*>& top) {
-  const Dtype* bottom_data = bottom[0]->cpu_data<Dtype>();
-  const Dtype* bottom_label = bottom[1]->cpu_data<Dtype>();
+  const Dtype* bottom_data = bottom[0]->cpu_data_base<Dtype>();
+  const Dtype* bottom_label = bottom[1]->cpu_data_base<Dtype>();
   int num = bottom[0]->num();
   int dim = bottom[0]->count() / bottom[0]->num();
   Mtype loss(0.f);
@@ -34,7 +34,7 @@ void MultinomialLogisticLossLayer<Dtype,Mtype>::Forward_cpu(
         choose<Dtype>(Dtype(kLOG_THRESHOLD), minDtype<Dtype>()));
     loss -= log(prob);
   }
-  top[0]->mutable_cpu_data<Dtype>()[0] = loss / num;
+  top[0]->mutable_cpu_data_base<Dtype>()[0] = loss / num;
 }
 
 template <typename Dtype, typename Mtype>
@@ -46,13 +46,13 @@ void MultinomialLogisticLossLayer<Dtype,Mtype>::Backward_cpu(
                << " Layer cannot backpropagate to label inputs.";
   }
   if (propagate_down[0]) {
-    const Dtype* bottom_data = bottom[0]->cpu_data<Dtype>();
-    const Dtype* bottom_label = bottom[1]->cpu_data<Dtype>();
-    Dtype* bottom_diff = bottom[0]->mutable_cpu_diff<Dtype>();
+    const Dtype* bottom_data = bottom[0]->cpu_data_base<Dtype>();
+    const Dtype* bottom_label = bottom[1]->cpu_data_base<Dtype>();
+    Dtype* bottom_diff = bottom[0]->mutable_cpu_diff_base<Dtype>();
     int num = bottom[0]->num();
     int dim = bottom[0]->count() / bottom[0]->num();
     caffe_set(bottom[0]->count(), typedConsts<Dtype>::zero, bottom_diff);
-    const Mtype scale = - top[0]->cpu_diff<Dtype>()[0] / num;
+    const Mtype scale = - top[0]->cpu_diff_base<Dtype>()[0] / num;
     for (int i = 0; i < num; ++i) {
       int label = static_cast<int>(bottom_label[i]);
       Mtype prob = std::max(

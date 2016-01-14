@@ -27,8 +27,8 @@ void SoftmaxLayer<Dtype,Mtype>::Reshape(const vector<BlobBase*>& bottom,
 template <typename Dtype, typename Mtype>
 void SoftmaxLayer<Dtype,Mtype>::Forward_cpu(const vector<BlobBase*>& bottom,
     const vector<BlobBase*>& top) {
-  const Dtype* bottom_data = bottom[0]->cpu_data<Dtype>();
-  Dtype* top_data = top[0]->mutable_cpu_data<Dtype>();
+  const Dtype* bottom_data = bottom[0]->cpu_data_base<Dtype>();
+  Dtype* top_data = top[0]->mutable_cpu_data_base<Dtype>();
   Dtype* scale_data = scale_.mutable_cpu_data();
   int channels = bottom[0]->shape(softmax_axis_);
   int dim = bottom[0]->count() / outer_num_;
@@ -64,9 +64,9 @@ template <typename Dtype, typename Mtype>
 void SoftmaxLayer<Dtype,Mtype>::Backward_cpu(const vector<BlobBase*>& top,
     const vector<bool>& propagate_down,
     const vector<BlobBase*>& bottom) {
-  const Dtype* top_diff = top[0]->cpu_diff<Dtype>();
-  const Dtype* top_data = top[0]->cpu_data<Dtype>();
-  Dtype* bottom_diff = bottom[0]->mutable_cpu_diff<Dtype>();
+  const Dtype* top_diff = top[0]->cpu_diff_base<Dtype>();
+  const Dtype* top_data = top[0]->cpu_data_base<Dtype>();
+  Dtype* bottom_diff = bottom[0]->mutable_cpu_diff_base<Dtype>();
   Dtype* scale_data = scale_.mutable_cpu_data();
   int channels = top[0]->shape(softmax_axis_);
   int dim = top[0]->count() / outer_num_;

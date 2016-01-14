@@ -22,10 +22,10 @@ namespace caffe {
 template <typename Dtype, typename Mtype>
 void CuDNNConvolutionLayer<Dtype,Mtype>::Forward_gpu(
     const vector<BlobBase*>& bottom, const vector<BlobBase*>& top) {
-    const Dtype* weight = this->blobs_[0]->template gpu_data<Dtype>();
+    const Dtype* weight = this->blobs_[0]->template gpu_data_base<Dtype>();
     for (int i = 0; i < bottom.size(); ++i) {
-      const Dtype* bottom_data = bottom[i]->gpu_data<Dtype>();
-      Dtype* top_data = top[i]->mutable_gpu_data<Dtype>();
+      const Dtype* bottom_data = bottom[i]->gpu_data_base<Dtype>();
+      Dtype* top_data = top[i]->mutable_gpu_data_base<Dtype>();
 
       // Test free space and force reshape if allocations have changed
       size_t workspace_limit_bytes, total_memory;
@@ -56,7 +56,7 @@ void CuDNNConvolutionLayer<Dtype,Mtype>::Forward_gpu(
 
         // Bias.
         if (this->bias_term_) {
-          const Dtype* bias_data = this->blobs_[1]->template gpu_data<Dtype>();
+          const Dtype* bias_data = this->blobs_[1]->template gpu_data_base<Dtype>();
           CUDNN_CHECK(cudnnAddTensor_v3(Caffe::cudnn_handle(),
                                         cudnn::dataType<Dtype>::one,
                                         bias_desc_,
@@ -85,17 +85,17 @@ void CuDNNConvolutionLayer<Dtype,Mtype>::Backward_gpu(const vector<BlobBase*>& t
 
 
     if (this->param_propagate_down_[0]) {
-      weight = this->blobs_[0]->template gpu_data<Dtype>();
-      weight_diff = this->blobs_[0]->template mutable_gpu_diff<Dtype>();
+      weight = this->blobs_[0]->template gpu_data_base<Dtype>();
+      weight_diff = this->blobs_[0]->template mutable_gpu_diff_base<Dtype>();
     }
     Dtype* bias_diff = NULL;
 
     if (this->bias_term_ && this->param_propagate_down_[1]) {
-      bias_diff = this->blobs_[1]->template mutable_gpu_diff<Dtype>();
+      bias_diff = this->blobs_[1]->template mutable_gpu_diff_base<Dtype>();
     }
 
     for (int i = 0; i < top.size(); ++i) {
-      const Dtype* top_diff = top[i]->gpu_diff<Dtype>();
+      const Dtype* top_diff = top[i]->gpu_diff_base<Dtype>();
 
         // Test free space and force reshape if allocations have changed
         size_t workspace_limit_bytes, total_memory;
@@ -129,7 +129,7 @@ void CuDNNConvolutionLayer<Dtype,Mtype>::Backward_gpu(const vector<BlobBase*>& t
 
             // Gradient w.r.t. weights.
             if (this->param_propagate_down_[0]) {
-          const Dtype* bottom_data = bottom[i]->gpu_data<Dtype>();
+          const Dtype* bottom_data = bottom[i]->gpu_data_base<Dtype>();
                 CUDNN_CHECK(cudnnConvBwdFilter(Caffe::cudnn_handle(),
                                           cudnn::dataType<Dtype>::one,
                                           bottom_descs_[i],
@@ -148,9 +148,9 @@ void CuDNNConvolutionLayer<Dtype,Mtype>::Backward_gpu(const vector<BlobBase*>& t
             // Gradient w.r.t. bottom data.
             if (propagate_down[i]) {
                 if (weight == NULL) {
-            weight = this->blobs_[0]->template gpu_data<Dtype>();
+            weight = this->blobs_[0]->template gpu_data_base<Dtype>();
                 }
-          Dtype* bottom_diff = bottom[i]->mutable_gpu_diff<Dtype>();
+          Dtype* bottom_diff = bottom[i]->mutable_gpu_diff_base<Dtype>();
                 CUDNN_CHECK(cudnnConvBwdData(Caffe::cudnn_handle(),
                                              cudnn::dataType<Dtype>::one,
                                              filter_desc_,

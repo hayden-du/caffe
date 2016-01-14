@@ -49,7 +49,6 @@ void BlobBase::Reshape(const BlobShape& shape) {
   Reshape(shape_vec);
 }
 
-//template <typename Dtype>
 BlobBase::BlobBase(const int num, const int channels, const int height,
     const int width)
   // capacity_ must be initialized before calling Reshape
@@ -72,12 +71,6 @@ template <typename Dtype>
 const Dtype* Blob<Dtype>::cpu_data() const {
   CHECK(data_);
   return (const Dtype*)data_->cpu_data();
-}
-
-template <typename Dtype>
-void Blob<Dtype>::set_cpu_data(Dtype* data) {
-  CHECK(data);
-  data_->set_cpu_data(data);
 }
 
 template <typename Dtype>
@@ -612,13 +605,6 @@ void Blob<float16>::FromProto(const BlobProto& proto, bool reshape) {
 #endif // CPU_ONLY
 
 INSTANTIATE_CLASS1(Blob);
-//INSTANTIATE_MEMBER_VOID_TEMPLATE(BlobBase,Update);
-//INSTANTIATE_MEMBER_TEMPLATE_CONST(Blob,asum_data);
-//INSTANTIATE_MEMBER_TEMPLATE_CONST(Blob,asum_diff);
-//INSTANTIATE_MEMBER_TEMPLATE_CONST(Blob,sumsq_data);
-//INSTANTIATE_MEMBER_TEMPLATE_CONST(Blob,sumsq_diff);
-//INSTANTIATE_MEMBER_VOID_TEMPLATE_1(Blob,scale_data);
-//INSTANTIATE_MEMBER_VOID_TEMPLATE_1(Blob,scale_diff);
 
 // we need full matrix of instantiations for blob
 template class Blob<int>;

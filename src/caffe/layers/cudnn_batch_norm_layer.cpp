@@ -12,8 +12,8 @@ namespace caffe {
 
 template <typename Dtype, typename Mtype>
 void CuDNNBatchNormLayer<Dtype,Mtype>::LayerSetUp(
-    const vector<Blob<Dtype>*>& bottom,
-    const vector<Blob<Dtype>*>& top) {
+    const vector<BlobBase*>& bottom,
+    const vector<BlobBase*>& top) {
   BatchNormLayer<Dtype,Mtype>::LayerSetUp(bottom, top);
 
   cudnn::createTensor4dDesc<Dtype>(&bottom_desc_);
@@ -45,7 +45,7 @@ void CuDNNBatchNormLayer<Dtype,Mtype>::LayerSetUp(
 
     for (int i = 2; i < 5; i++) {
       caffe_set(this->blobs_[i]->count(), Dtype(0),
-                this->blobs_[i]->mutable_cpu_data());
+                this->blobs_[i]->template mutable_cpu_data_base<Dtype>());
     }
   }
 
@@ -54,8 +54,8 @@ void CuDNNBatchNormLayer<Dtype,Mtype>::LayerSetUp(
 
 template <typename Dtype, typename Mtype>
 void CuDNNBatchNormLayer<Dtype,Mtype>::Reshape(
-    const vector<Blob<Dtype>*>& bottom,
-    const vector<Blob<Dtype>*>& top) {
+    const vector<BlobBase*>& bottom,
+    const vector<BlobBase*>& top) {
   BatchNormLayer<Dtype,Mtype>::Reshape(bottom, top);
 
   // set up main tensors

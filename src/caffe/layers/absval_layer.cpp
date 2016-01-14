@@ -18,18 +18,18 @@ template <typename Dtype, typename Mtype>
 void AbsValLayer<Dtype,Mtype>::Forward_cpu(
     const vector<BlobBase*>& bottom, const vector<BlobBase*>& top) {
   const int count = top[0]->count();
-  Dtype* top_data = top[0]->mutable_cpu_data<Dtype>();
-  caffe_abs<Dtype>(count, bottom[0]->cpu_data<Dtype>(), top_data);
+  Dtype* top_data = top[0]->mutable_cpu_data_base<Dtype>();
+  caffe_abs<Dtype>(count, bottom[0]->cpu_data_base<Dtype>(), top_data);
 }
 
 template <typename Dtype, typename Mtype>
 void AbsValLayer<Dtype,Mtype>::Backward_cpu(const vector<BlobBase*>& top,
     const vector<bool>& propagate_down, const vector<BlobBase*>& bottom) {
   const int count = top[0]->count();
-  const Dtype* top_diff = top[0]->cpu_diff<Dtype>();
+  const Dtype* top_diff = top[0]->cpu_diff_base<Dtype>();
   if (propagate_down[0]) {
-    const Dtype* bottom_data = bottom[0]->cpu_data<Dtype>();
-    Dtype* bottom_diff = bottom[0]->mutable_cpu_diff<Dtype>();
+    const Dtype* bottom_data = bottom[0]->cpu_data_base<Dtype>();
+    Dtype* bottom_diff = bottom[0]->mutable_cpu_diff_base<Dtype>();
     caffe_cpu_sign(count, bottom_data, bottom_diff);
     caffe_mul(count, bottom_diff, top_diff, bottom_diff);
   }

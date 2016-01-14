@@ -468,7 +468,7 @@ class Layer: public LayerBase {
         if (loss_weight == 0.F) { continue; }
         this->set_loss(top_id, loss_weight);
         const int count = top[top_id]->count();
-        Dtype* loss_multiplier = top[top_id]->mutable_cpu_data<Dtype>();
+        Dtype* loss_multiplier = top[top_id]->mutable_cpu_data_base<Dtype>();
         caffe_set(count, loss_weight, loss_multiplier);
       }
     }
@@ -505,8 +505,8 @@ inline float Layer<Dtype,Mtype>::Forward(const vector<BlobBase*>& bottom,
     for (int top_id = 0; top_id < top.size(); ++top_id) {
       if (!this->template loss<Dtype>(top_id)) { continue; }
       const int count = top[top_id]->count();
-      const Dtype* data = top[top_id]->cpu_data<Dtype>();
-      const Dtype* loss_weights = top[top_id]->cpu_diff<Dtype>();
+      const Dtype* data = top[top_id]->cpu_data_base<Dtype>();
+      const Dtype* loss_weights = top[top_id]->cpu_diff_base<Dtype>();
       loss += caffe_cpu_dot<Dtype,Mtype>(count, data, loss_weights);
     }
     break;
@@ -516,8 +516,8 @@ inline float Layer<Dtype,Mtype>::Forward(const vector<BlobBase*>& bottom,
     for (int top_id = 0; top_id < top.size(); ++top_id) {
       if (!this->template loss<Dtype>(top_id)) { continue; }
       const int count = top[top_id]->count();
-      const Dtype* data = top[top_id]->gpu_data<Dtype>();
-      const Dtype* loss_weights = top[top_id]->gpu_diff<Dtype>();
+      const Dtype* data = top[top_id]->gpu_data_base<Dtype>();
+      const Dtype* loss_weights = top[top_id]->gpu_diff_base<Dtype>();
       Mtype blob_loss = 0;
       caffe_gpu_dot<Dtype,Mtype>(count, data, loss_weights, &blob_loss);
       loss += blob_loss;

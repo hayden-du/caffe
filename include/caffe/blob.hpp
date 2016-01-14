@@ -56,7 +56,7 @@ class BlobBase {
   void Reshape(const vector<int>& shape);
   void Reshape(const BlobShape& shape);
 
-  void ReshapeLike(const Blob<Base &other) {
+  void ReshapeLike(const BlobBase& other) {
     Reshape(other.shape());
   }
 
@@ -204,56 +204,56 @@ class BlobBase {
   }
 
   template <typename Dtype>
-  const Dtype* cpu_data() const {
+  const Dtype* cpu_data_base() const {
     CHECK(data_);
     CHECK(dtsize() == sizeof(Dtype));
     return static_cast<const Dtype*>(data_->cpu_data());
   }
 
   template <typename Dtype>
-  const Dtype* gpu_data() const {
+  const Dtype* gpu_data_base() const {
     CHECK(data_);
     CHECK(dtsize() == sizeof(Dtype));
     return static_cast<const Dtype*>(data_->gpu_data());
   }
 
   template <typename Dtype>
-  const Dtype* cpu_diff() const {
+  const Dtype* cpu_diff_base() const {
     CHECK(data_);
     CHECK(dtsize() == sizeof(Dtype));
     return static_cast<const Dtype*>(diff_->cpu_data());
   }
 
   template <typename Dtype>
-  const Dtype* gpu_diff() const {
+  const Dtype* gpu_diff_base() const {
     CHECK(data_);
     CHECK(dtsize() == sizeof(Dtype));
     return static_cast<const Dtype*>(diff_->gpu_data());
   }
 
   template <typename Dtype>
-  Dtype* mutable_cpu_data() {
+  Dtype* mutable_cpu_data_base() {
     CHECK(data_);
     CHECK(dtsize() == sizeof(Dtype));
     return static_cast<Dtype*>(data_->mutable_cpu_data());
   }
 
   template <typename Dtype>
-  Dtype* mutable_gpu_data() {
+  Dtype* mutable_gpu_data_base() {
     CHECK(data_);
     CHECK(dtsize() == sizeof(Dtype));
     return static_cast<Dtype*>(data_->mutable_gpu_data());
   }
 
   template <typename Dtype>
-  Dtype* mutable_cpu_diff() {
+  Dtype* mutable_cpu_diff_base() {
     CHECK(data_);
     CHECK(dtsize() == sizeof(Dtype));
     return static_cast<Dtype*>(diff_->mutable_cpu_data());
   }
 
   template <typename Dtype>
-  Dtype* mutable_gpu_diff() {
+  Dtype* mutable_gpu_diff_base() {
     CHECK(data_);
     CHECK(dtsize() == sizeof(Dtype));
     return static_cast<Dtype*>(diff_->mutable_gpu_data());
@@ -308,6 +308,7 @@ class BlobBase {
   virtual void FromProto(const BlobProto& proto, bool reshape = true) = 0;
   virtual void ToProto(BlobProto* proto, bool write_diff = false) const = 0;
 
+  //FIXME
   template <typename Dtype>
   Blob<Dtype>* instance() {
     CHECK(dtsize() == sizeof(Dtype));
@@ -336,7 +337,6 @@ public:
   explicit Blob(const vector<int>& shape)
     : BlobBase(shape) {}
 
-  void set_cpu_data(Dtype* data);
   const Dtype* cpu_data() const;
   const Dtype* gpu_data() const;
   const Dtype* cpu_diff() const;

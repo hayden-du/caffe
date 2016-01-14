@@ -33,8 +33,8 @@ void DropoutLayer<Dtype,Mtype>::Reshape(const vector<BlobBase*>& bottom,
 template <typename Dtype, typename Mtype>
 void DropoutLayer<Dtype,Mtype>::Forward_cpu(const vector<BlobBase*>& bottom,
     const vector<BlobBase*>& top) {
-  const Dtype* bottom_data = bottom[0]->cpu_data<Dtype>();
-  Dtype* top_data = top[0]->mutable_cpu_data<Dtype>();
+  const Dtype* bottom_data = bottom[0]->cpu_data_base<Dtype>();
+  Dtype* top_data = top[0]->mutable_cpu_data_base<Dtype>();
   unsigned int* mask = rand_vec_.mutable_cpu_data();
   const int count = bottom[0]->count();
   if (this->phase_ == TRAIN) {
@@ -53,8 +53,8 @@ void DropoutLayer<Dtype,Mtype>::Backward_cpu(const vector<BlobBase*>& top,
     const vector<bool>& propagate_down,
     const vector<BlobBase*>& bottom) {
   if (propagate_down[0]) {
-    const Dtype* top_diff = top[0]->cpu_diff<Dtype>();
-    Dtype* bottom_diff = bottom[0]->mutable_cpu_diff<Dtype>();
+    const Dtype* top_diff = top[0]->cpu_diff_base<Dtype>();
+    Dtype* bottom_diff = bottom[0]->mutable_cpu_diff_base<Dtype>();
     if (this->phase_ == TRAIN) {
       const unsigned int* mask = rand_vec_.cpu_data();
       const int count = bottom[0]->count();

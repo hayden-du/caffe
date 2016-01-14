@@ -130,8 +130,8 @@ void PoolingLayer<Dtype,Mtype>::Reshape(const vector<BlobBase*>& bottom,
 template <typename Dtype, typename Mtype>
 void PoolingLayer<Dtype,Mtype>::Forward_cpu(const vector<BlobBase*>& bottom,
       const vector<BlobBase*>& top) {
-  const Dtype* bottom_data = bottom[0]->cpu_data<Dtype>();
-  Dtype* top_data = top[0]->mutable_cpu_data<Dtype>();
+  const Dtype* bottom_data = bottom[0]->cpu_data_base<Dtype>();
+  Dtype* top_data = top[0]->mutable_cpu_data_base<Dtype>();
   const int top_count = top[0]->count();
   // We'll output the mask to top[1] if it's of size >1.
   const bool use_top_mask = top.size() > 1;
@@ -143,7 +143,7 @@ void PoolingLayer<Dtype,Mtype>::Forward_cpu(const vector<BlobBase*>& bottom,
   case PoolingParameter_PoolMethod_MAX:
     // Initialize
     if (use_top_mask) {
-      top_mask = top[1]->mutable_cpu_data<Dtype>();
+      top_mask = top[1]->mutable_cpu_data_base<Dtype>();
       caffe_set(top_count, typedConsts<Dtype>::minus_one, top_mask);
     } else {
       mask = max_idx_.mutable_cpu_data();
@@ -236,8 +236,8 @@ void PoolingLayer<Dtype,Mtype>::Backward_cpu(const vector<BlobBase*>& top,
   if (!propagate_down[0]) {
     return;
   }
-  const Dtype* top_diff = top[0]->cpu_diff<Dtype>();
-  Dtype* bottom_diff = bottom[0]->mutable_cpu_diff<Dtype>();
+  const Dtype* top_diff = top[0]->cpu_diff_base<Dtype>();
+  Dtype* bottom_diff = bottom[0]->mutable_cpu_diff_base<Dtype>();
   // Different pooling methods. We explicitly do the switch outside the for
   // loop to save time, although this results in more codes.
   caffe_set(bottom[0]->count(), typedConsts<Dtype>::zero, bottom_diff);
@@ -249,7 +249,7 @@ void PoolingLayer<Dtype,Mtype>::Backward_cpu(const vector<BlobBase*>& top,
   case PoolingParameter_PoolMethod_MAX:
     // The main loop
     if (use_top_mask) {
-      top_mask = top[1]->cpu_data<Dtype>();
+      top_mask = top[1]->cpu_data_base<Dtype>();
     } else {
       mask = max_idx_.cpu_data();
     }

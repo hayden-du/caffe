@@ -81,8 +81,8 @@ template <typename Dtype, typename Mtype>
 void LRNLayer<Dtype,Mtype>::CrossChannelForward_gpu(
     const vector<BlobBase*>& bottom, const vector<BlobBase*>& top) {
   // First, compute scale
-  const Dtype* bottom_data = bottom[0]->gpu_data<Dtype>();
-  Dtype* top_data = top[0]->mutable_gpu_data<Dtype>();
+  const Dtype* bottom_data = bottom[0]->gpu_data_base<Dtype>();
+  Dtype* top_data = top[0]->mutable_gpu_data_base<Dtype>();
   Dtype* scale_data = scale_.mutable_gpu_data();
   // We will launch one kernel for each pixel location, and have the kernel
   // go through all the channels.
@@ -188,10 +188,10 @@ void LRNLayer<Dtype,Mtype>::CrossChannelBackward_gpu(
   int n_threads = num_ * height_ * width_;
   // NOLINT_NEXT_LINE(whitespace/operators)
   LRNComputeDiff<Dtype,Mtype><<<CAFFE_GET_BLOCKS(n_threads), CAFFE_CUDA_NUM_THREADS>>>(
-      n_threads, bottom[0]->gpu_data<Dtype>(), top[0]->gpu_data<Dtype>(),
-      scale_.gpu_data(), top[0]->gpu_diff<Dtype>(), num_, channels_, height_, width_,
+      n_threads, bottom[0]->gpu_data_base<Dtype>(), top[0]->gpu_data_base<Dtype>(),
+      scale_.gpu_data(), top[0]->gpu_diff_base<Dtype>(), num_, channels_, height_, width_,
       size_, -beta_, Mtype(2. * alpha_ * beta_ / size_),
-      bottom[0]->mutable_gpu_diff<Dtype>());
+      bottom[0]->mutable_gpu_diff_base<Dtype>());
 }
 
 template void LRNLayer<float,float>::CrossChannelBackward_gpu(

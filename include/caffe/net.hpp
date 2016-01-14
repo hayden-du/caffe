@@ -185,7 +185,7 @@ class Net {
   inline const vector<Blob<Dtype>*>& input_blobs() const {
     return net_input_blobs_;
   }
-  inline const vector<BlobBase*>& output_blobs() const {
+  inline const vector<Blob<Dtype>*>& output_blobs() const {
     return net_output_blobs_;
   }
   inline const vector<int>& input_blob_indices() const {
@@ -272,7 +272,7 @@ class Net {
   vector<int> net_input_blob_indices_;
   vector<int> net_output_blob_indices_;
   vector<Blob<Dtype>*> net_input_blobs_;
-  vector<BlobBase*> net_output_blobs_;
+  vector<Blob<Dtype>*> net_output_blobs_;
   /// The parameters in the network.
   vector<shared_ptr<BlobBase> > params_;
   vector<BlobBase*> learnable_params_;

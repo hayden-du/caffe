@@ -36,8 +36,8 @@ void ContrastiveLossLayer<Dtype,Mtype>::Forward_cpu(
   int count = bottom[0]->count();
   caffe_sub(
       count,
-      bottom[0]->cpu_data<Dtype>(),  // a
-      bottom[1]->cpu_data<Dtype>(),  // b
+      bottom[0]->cpu_data_base<Dtype>(),  // a
+      bottom[1]->cpu_data_base<Dtype>(),  // b
       diff_.mutable_cpu_data());  // a_i-b_i
   const int channels = bottom[0]->channels();
   Mtype margin(this->layer_param_.contrastive_loss_param().margin());
@@ -47,7 +47,7 @@ void ContrastiveLossLayer<Dtype,Mtype>::Forward_cpu(
   for (int i = 0; i < bottom[0]->num(); ++i) {
     dist_sq_.mutable_cpu_data()[i] = caffe_cpu_dot<Dtype,Mtype>(channels,
         diff_.cpu_data() + (i*channels), diff_.cpu_data() + (i*channels));
-    if (static_cast<int>(bottom[2]->cpu_data<Dtype>()[i])) {  // similar pairs
+    if (static_cast<int>(bottom[2]->cpu_data_base<Dtype>()[i])) {  // similar pairs
       loss += dist_sq_.cpu_data()[i];
     } else {  // dissimilar pairs
       if (legacy_version) {
@@ -59,7 +59,7 @@ void ContrastiveLossLayer<Dtype,Mtype>::Forward_cpu(
     }
   }
   loss = loss / static_cast<Mtype>(bottom[0]->num()) / Mtype(2);
-  top[0]->mutable_cpu_data<Dtype>()[0] = loss;
+  top[0]->mutable_cpu_data_base<Dtype>()[0] = loss;
 }
 
 template <typename Dtype, typename Mtype>
@@ -71,13 +71,13 @@ void ContrastiveLossLayer<Dtype,Mtype>::Backward_cpu(const vector<BlobBase*>& to
   for (int i = 0; i < 2; ++i) {
     if (propagate_down[i]) {
       const Mtype sign(i == 0 ? 1 : -1);
-      const Mtype alpha = sign * top[0]->cpu_diff<Dtype>()[0] /
+      const Mtype alpha = sign * top[0]->cpu_diff_base<Dtype>()[0] /
           static_cast<Mtype>(bottom[i]->num());
       int num = bottom[i]->num();
       int channels = bottom[i]->channels();
       for (int j = 0; j < num; ++j) {
-        Dtype* bout = bottom[i]->mutable_cpu_diff<Dtype>();
-        if (static_cast<int>(bottom[2]->cpu_data<Dtype>()[j])) {  // similar pairs
+        Dtype* bout = bottom[i]->mutable_cpu_diff_base<Dtype>();
+        if (static_cast<int>(bottom[2]->cpu_data_base<Dtype>()[j])) {  // similar pairs
           caffe_cpu_axpby<Dtype,Mtype>(
               channels,
               alpha,

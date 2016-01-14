@@ -44,9 +44,9 @@ __global__ void EmbedBackward(const int nthreads, const Dtype* bottom_data,
 template <typename Dtype, typename Mtype>
 void EmbedLayer<Dtype,Mtype>::Forward_gpu(const vector<BlobBase*>& bottom,
     const vector<BlobBase*>& top) {
-  const Dtype* bottom_data = bottom[0]->gpu_data<Dtype>();
-  Dtype* top_data = top[0]->mutable_gpu_data<Dtype>();
-  const Dtype* weight = this->blobs_[0]->template gpu_data<Dtype>();
+  const Dtype* bottom_data = bottom[0]->gpu_data_base<Dtype>();
+  Dtype* top_data = top[0]->mutable_gpu_data_base<Dtype>();
+  const Dtype* weight = this->blobs_[0]->template gpu_data_base<Dtype>();
   const int count = top[0]->count();
   EmbedForward<Dtype,Mtype>  // NOLINT_NEXT_LINE(whitespace/operators)
       <<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
@@ -54,7 +54,7 @@ void EmbedLayer<Dtype,Mtype>::Forward_gpu(const vector<BlobBase*>& bottom,
   if (bias_term_) {
     caffe_gpu_gemm<Dtype,Mtype>(CblasNoTrans, CblasNoTrans, M_, N_, 1, 1,
         bias_multiplier_.gpu_data(),
-        this->blobs_[1]->template gpu_data<Dtype>(), 1, top_data);
+        this->blobs_[1]->template gpu_data_base<Dtype>(), 1, top_data);
   }
 }
 
@@ -64,16 +64,16 @@ void EmbedLayer<Dtype,Mtype>::Backward_gpu(const vector<BlobBase*>& top,
   CHECK(!propagate_down[0]) << "Can't backpropagate to EmbedLayer input.";
   if (this->param_propagate_down_[0]) {
     const int top_count = top[0]->count();
-    const Dtype* top_diff = top[0]->gpu_diff<Dtype>();
-    const Dtype* bottom_data = bottom[0]->gpu_data<Dtype>();
-    Dtype* weight_diff = this->blobs_[0]->template mutable_gpu_diff<Dtype>();
+    const Dtype* top_diff = top[0]->gpu_diff_base<Dtype>();
+    const Dtype* bottom_data = bottom[0]->gpu_data_base<Dtype>();
+    Dtype* weight_diff = this->blobs_[0]->template mutable_gpu_diff_base<Dtype>();
     EmbedBackward<Dtype,Mtype>  // NOLINT_NEXT_LINE(whitespace/operators)
         <<<CAFFE_GET_BLOCKS(top_count), CAFFE_CUDA_NUM_THREADS>>>(
         top_count, bottom_data, top_diff, M_, N_, K_, weight_diff);
   }
   if (bias_term_ && this->param_propagate_down_[1]) {
-    const Dtype* top_diff = top[0]->gpu_diff<Dtype>();
-    Dtype* bias_diff = this->blobs_[1]->template mutable_gpu_diff<Dtype>();
+    const Dtype* top_diff = top[0]->gpu_diff_base<Dtype>();
+    Dtype* bias_diff = this->blobs_[1]->template mutable_gpu_diff_base<Dtype>();
     caffe_gpu_gemv<Dtype,Mtype>(CblasTrans, M_, N_, 1, top_diff,
         bias_multiplier_.gpu_data(), 1, bias_diff);
   }

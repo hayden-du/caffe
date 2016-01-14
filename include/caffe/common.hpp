@@ -106,31 +106,6 @@ private:\
   INSTANTIATE_CLASS_CPU1(classname); \
    template class classname<float16>
 
-#  define INSTANTIATE_MEMBER_VOID_TEMPLATE(classname,membername) \
-   template void classname<float>::membername<float>(); \
-   template void classname<double>::membername<double>(); \
-   template void classname<float16>::membername<CAFFE_FP16_MTYPE>()
-
-#  define INSTANTIATE_MEMBER_VOID_TEMPLATE_1(classname,membername) \
-   template void classname<float>::membername<float>(float); \
-   template void classname<double>::membername<double>(double); \
-   template void classname<float16>::membername<CAFFE_FP16_MTYPE>(CAFFE_FP16_MTYPE)
-
-#  define INSTANTIATE_MEMBER_TEMPLATE(classname,membername) \
-   template float classname<float>::membername<float>(); \
-   template double classname<double>::membername<double>(); \
-   template CAFFE_FP16_MTYPE classname<float16>::membername<CAFFE_FP16_MTYPE>()
-
-#  define INSTANTIATE_MEMBER_TEMPLATE_1(classname,membername) \
-   template float classname<float>::membername<float>(float); \
-   template double classname<double>::membername<double>(double); \
-   template CAFFE_FP16_MTYPE classname<float16>::membername<CAFFE_FP16_MTYPE>(CAFFE_FP16_MTYPE)
-
-#  define INSTANTIATE_MEMBER_TEMPLATE_CONST(classname,membername) \
-   template float classname<float>::membername<float>() const; \
-   template double classname<double>::membername<double>() const; \
-   template CAFFE_FP16_MTYPE classname<float16>::membername<CAFFE_FP16_MTYPE>() const
-
 #  define INSTANTIATE_LAYER_GPU_FUNCS(classname) \
    INSTANTIATE_LAYER_GPU_FORWARD(classname); \
    INSTANTIATE_LAYER_GPU_FORWARD_FF(classname); \

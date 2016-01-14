@@ -116,8 +116,8 @@ void Im2colLayer<Dtype,Mtype>::Reshape(const vector<BlobBase*>& bottom,
 template <typename Dtype, typename Mtype>
 void Im2colLayer<Dtype,Mtype>::Forward_cpu(const vector<BlobBase*>& bottom,
       const vector<BlobBase*>& top) {
-  const Dtype* bottom_data = bottom[0]->cpu_data<Dtype>();
-  Dtype* top_data = top[0]->mutable_cpu_data<Dtype>();
+  const Dtype* bottom_data = bottom[0]->cpu_data_base<Dtype>();
+  Dtype* top_data = top[0]->mutable_cpu_data_base<Dtype>();
   for (int n = 0; n < num_; ++n) {
     DCHECK_EQ(bottom[0]->shape().size() - channel_axis_, num_spatial_axes_ + 1);
     DCHECK_EQ(top[0]->shape().size() - channel_axis_, num_spatial_axes_ + 1);
@@ -145,8 +145,8 @@ void Im2colLayer<Dtype,Mtype>::Forward_cpu(const vector<BlobBase*>& bottom,
 template <typename Dtype, typename Mtype>
 void Im2colLayer<Dtype,Mtype>::Backward_cpu(const vector<BlobBase*>& top,
       const vector<bool>& propagate_down, const vector<BlobBase*>& bottom) {
-  const Dtype* top_diff = top[0]->cpu_diff<Dtype>();
-  Dtype* bottom_diff = bottom[0]->mutable_cpu_diff<Dtype>();
+  const Dtype* top_diff = top[0]->cpu_diff_base<Dtype>();
+  Dtype* bottom_diff = bottom[0]->mutable_cpu_diff_base<Dtype>();
   for (int n = 0; n < num_; ++n) {
     if (!force_nd_im2col_ && num_spatial_axes_ == 2) {
       col2im_cpu(top_diff + n * top_dim_, channels_,

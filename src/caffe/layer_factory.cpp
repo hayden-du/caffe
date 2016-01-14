@@ -40,8 +40,7 @@ shared_ptr<LayerBase> GetConvolutionLayer(
 REGISTER_LAYER_CREATOR(Convolution, GetConvolutionLayer);
 
 // Get BN layer according to engine.
-template <typename Dtype, typename Mtype>
-shared_ptr<Layer<Dtype,Mtype> > GetBatchNormLayer(const LayerParameter& param) {
+shared_ptr<LayerBase> GetBatchNormLayer(const LayerParameter& param) {
   BatchNormParameter_Engine engine = param.batch_norm_param().engine();
   if (engine == BatchNormParameter_Engine_DEFAULT) {
     engine = BatchNormParameter_Engine_CAFFE;
@@ -50,10 +49,10 @@ shared_ptr<Layer<Dtype,Mtype> > GetBatchNormLayer(const LayerParameter& param) {
 #endif
   }
   if (engine == BatchNormParameter_Engine_CAFFE) {
-    return shared_ptr<Layer<Dtype,Mtype> >(new BatchNormLayer<Dtype,Mtype>(param));
+    return InstantiateLayer<BatchNormLayer>(param);
 #ifdef USE_CUDNN
   } else if (engine == BatchNormParameter_Engine_CUDNN) {
-    return shared_ptr<Layer<Dtype,Mtype> >(new CuDNNBatchNormLayer<Dtype,Mtype>(param));
+    return InstantiateLayer<CuDNNBatchNormLayer>(param);
 #endif
   } else {
     LOG(FATAL) << "Layer " << param.name() << " has unknown engine.";

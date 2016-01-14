@@ -56,7 +56,7 @@ void SoftmaxWithLossLayer<Dtype,Mtype>::Forward_cpu(
   // The forward pass computes the softmax prob values.
   softmax_layer_->Forward(softmax_bottom_vec_, softmax_top_vec_);
   const Dtype* prob_data = prob_.cpu_data();
-  const Dtype* label = bottom[1]->cpu_data<Dtype>();
+  const Dtype* label = bottom[1]->cpu_data_base<Dtype>();
   int dim = prob_.count() / outer_num_;
   int count = 0;
   Mtype loss(0.f);
@@ -73,9 +73,9 @@ void SoftmaxWithLossLayer<Dtype,Mtype>::Forward_cpu(
     }
   }
   if (normalize_) {
-    top[0]->mutable_cpu_data<Dtype>()[0] = loss / count;
+    top[0]->mutable_cpu_data_base<Dtype>()[0] = loss / count;
   } else {
-    top[0]->mutable_cpu_data<Dtype>()[0] = loss / outer_num_;
+    top[0]->mutable_cpu_data_base<Dtype>()[0] = loss / outer_num_;
   }
   if (top.size() == 2) {
     top[1]->ShareData(prob_);
@@ -90,10 +90,10 @@ void SoftmaxWithLossLayer<Dtype,Mtype>::Backward_cpu(const vector<BlobBase*>& to
                << " Layer cannot backpropagate to label inputs.";
   }
   if (propagate_down[0]) {
-    Dtype* bottom_diff = bottom[0]->mutable_cpu_diff<Dtype>();
+    Dtype* bottom_diff = bottom[0]->mutable_cpu_diff_base<Dtype>();
     const Dtype* prob_data = prob_.cpu_data();
     caffe_copy(prob_.count(), prob_data, bottom_diff);
-    const Dtype* label = bottom[1]->cpu_data<Dtype>();
+    const Dtype* label = bottom[1]->cpu_data_base<Dtype>();
     int dim = prob_.count() / outer_num_;
     int count = 0;
     for (int i = 0; i < outer_num_; ++i) {
@@ -111,7 +111,7 @@ void SoftmaxWithLossLayer<Dtype,Mtype>::Backward_cpu(const vector<BlobBase*>& to
       }
     }
     // Scale gradient
-    const Mtype loss_weight = top[0]->cpu_diff<Dtype>()[0];
+    const Mtype loss_weight = top[0]->cpu_diff_base<Dtype>()[0];
     if (normalize_) {
       caffe_scal<Dtype,Mtype>(prob_.count(), loss_weight / count, bottom_diff);
     } else {
