@@ -14,6 +14,7 @@
 #include "caffe/vision_layers.hpp"
 
 using caffe::Blob;
+using caffe::BlobBase;
 using caffe::Caffe;
 using caffe::Datum;
 using caffe::Net;
@@ -142,7 +143,7 @@ int feature_extraction_pipeline(int argc, char** argv) {
   for (int batch_index = 0; batch_index < num_mini_batches; ++batch_index) {
     feature_extraction_net->Forward(input_vec);
     for (int i = 0; i < num_features; ++i) {
-      const shared_ptr<Blob<Dtype> > feature_blob = feature_extraction_net
+      const shared_ptr<BlobBase> feature_blob = feature_extraction_net
           ->blob_by_name(blob_names[i]);
       int batch_size = feature_blob->num();
       int dim_features = feature_blob->count() / batch_size;
@@ -153,7 +154,7 @@ int feature_extraction_pipeline(int argc, char** argv) {
         datum.set_channels(feature_blob->channels());
         datum.clear_data();
         datum.clear_float_data();
-        feature_blob_data = feature_blob->cpu_data() +
+        feature_blob_data = feature_blob->cpu_data_base<Dtype>() +
             feature_blob->offset(n);
         for (int d = 0; d < dim_features; ++d) {
           datum.add_float_data(feature_blob_data[d]);

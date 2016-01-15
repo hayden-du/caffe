@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
         it != blob_names.end(); ++it) {
       const std::string& blob_name = *it;
 
-      shared_ptr<Blob<float> > blob = net->blob_by_name(blob_name);
+      shared_ptr<BlobBase> blob = net->blob_by_name(blob_name);
       BlobProto blob_proto, blob_proto16;
       blob->ToProto(&blob_proto, true);
       blob_proto16.mutable_shape()->CopyFrom(blob_proto.shape());
@@ -82,8 +82,8 @@ int main(int argc, char** argv) {
 
       std::cout << "Layer: " << layer_name << std::endl;
 
-      shared_ptr<Layer<float,float> > layer = net->layer_by_name(layer_name);
-      const vector<shared_ptr<Blob<float> > >& blobs = layer->blobs();
+      shared_ptr<LayerBase> layer = net->layer_by_name(layer_name);
+      const vector<shared_ptr<BlobBase> >& blobs = layer->blobs();
 
       const LayerParameter& layer_param = layer->layer_param();
       shared_ptr<LayerParameter> layer_param16(new LayerParameter);

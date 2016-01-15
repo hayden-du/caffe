@@ -257,7 +257,6 @@ public:
       const vector<bool>& propagate_down,
       const vector<BlobBase*>& bottom) = 0;
 
-
   /**
    * @brief Specifies whether the layer should compute gradients w.r.t. a
    *        parameter at a particular index given by param_id.
@@ -414,6 +413,16 @@ class Layer: public LayerBase {
   virtual void Backward(const vector<BlobBase*>& top,
       const vector<bool>& propagate_down,
       const vector<BlobBase*>& bottom);
+
+
+  template <typename DT, typename DB>
+  float Forward(const vector<Blob<DB>*>& bottom,
+      const vector<Blob<DT>*>& top) {return 0.F;} //FIXME
+
+  template <typename DT, typename DB>
+  void Backward(const vector<Blob<DT>*>& top,
+      const vector<bool>& propagate_down,
+      const vector<Blob<DB>*>& bottom) {} //FIXME
 
   virtual void ToProto(LayerParameter* param, bool write_diff = false);
 

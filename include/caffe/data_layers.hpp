@@ -39,7 +39,7 @@ class BaseDataLayer : public Layer<Dtype,Mtype> {
       const vector<BlobBase*>& top) {}
   // Data layers have no bottoms, so reshaping is trivial.
   virtual void Reshape(const vector<BlobBase*>& bottom,
-      const vector<BlobBase*>& top);
+      const vector<BlobBase*>& top) {}
 
   virtual void Backward_cpu(const vector<BlobBase*>& top,
       const vector<bool>& propagate_down, const vector<BlobBase*>& bottom) {}
@@ -124,7 +124,7 @@ class DummyDataLayer : public Layer<Dtype,Mtype> {
   virtual inline bool ShareInParallel() const { return true; }
   // Data layers have no bottoms, so reshaping is trivial.
   virtual void Reshape(const vector<BlobBase*>& bottom,
-      const vector<BlobBase*>& top);
+      const vector<BlobBase*>& top) {}
 
   virtual inline const char* type() const { return "DummyData"; }
   virtual inline int ExactNumBottomBlobs() const { return 0; }
@@ -159,7 +159,7 @@ class HDF5DataLayer : public Layer<Dtype,Mtype> {
   virtual inline bool ShareInParallel() const { return true; }
   // Data layers have no bottoms, so reshaping is trivial.
   virtual void Reshape(const vector<BlobBase*>& bottom,
-      const vector<BlobBase*>& top);
+      const vector<BlobBase*>& top) {}
 
   virtual inline const char* type() const { return "HDF5Data"; }
   virtual inline int ExactNumBottomBlobs() const { return 0; }
@@ -202,7 +202,7 @@ class HDF5OutputLayer : public Layer<Dtype,Mtype> {
   virtual inline bool ShareInParallel() const { return true; }
   // Data layers have no bottoms, so reshaping is trivial.
   virtual void Reshape(const vector<BlobBase*>& bottom,
-      const vector<BlobBase*>& top);
+      const vector<BlobBase*>& top) {}
 
   virtual inline const char* type() const { return "HDF5Output"; }
   // TODO: no limit on the number of blobs

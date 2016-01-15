@@ -1,3 +1,5 @@
+#if 0
+
 #ifdef WITH_PYTHON_LAYER
 #include "boost/python.hpp"
 namespace bp = boost::python;
@@ -430,4 +432,10 @@ int main(int argc, char** argv) {
   } else {
     gflags::ShowUsageWithFlagsRestrict(argv[0], "tools/caffe");
   }
+}
+
+#endif
+
+int main(int argc, char** argv) {
+  return 0;
 }

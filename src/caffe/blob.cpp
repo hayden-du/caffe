@@ -6,6 +6,43 @@
 #include "caffe/syncedmem.hpp"
 #include "caffe/util/math_functions.hpp"
 
+#define INSTANTIATE_BB_MEMBER_00(member)                                        \
+  template<> void BlobBase::member<unsigned int,unsigned int>() {               \
+    NOT_IMPLEMENTED;                                                            \
+  }                                                                             \
+  template<> void BlobBase::member<int,int>() {                                 \
+    NOT_IMPLEMENTED;                                                            \
+  }                                                                             \
+  template void BlobBase::member<float,float>();                                \
+  template void BlobBase::member<double,double>();                              \
+  template void BlobBase::member<float16,float>();                              \
+  template void BlobBase::member<float16,float16>()
+
+#define INSTANTIATE_BB_MEMBER_02(member)                                        \
+  template<> void BlobBase::member<unsigned int,unsigned int>(unsigned int) {   \
+    NOT_IMPLEMENTED;                                                            \
+  }                                                                             \
+  template<> void BlobBase::member<int,int>(int) {                              \
+    NOT_IMPLEMENTED;                                                            \
+  }                                                                             \
+  template void BlobBase::member<float,float>(float arg);                       \
+  template void BlobBase::member<double,double>(double arg);                    \
+  template void BlobBase::member<float16,float>(float arg);                     \
+  template void BlobBase::member<float16,float16>(float16 arg)
+
+#define INSTANTIATE_BB_MEMBER_20C(member)                                       \
+  template<> unsigned int BlobBase::member<unsigned int,unsigned int>() const { \
+    NOT_IMPLEMENTED;                                                            \
+  }                                                                             \
+  template<> int BlobBase::member<int,int>() const {                            \
+    NOT_IMPLEMENTED;                                                            \
+  }                                                                             \
+  template float BlobBase::member<float,float>() const;                         \
+  template double BlobBase::member<double,double>() const;                      \
+  template float BlobBase::member<float16,float>() const;                       \
+  template float16 BlobBase::member<float16,float16>() const
+
+
 namespace caffe {
 
 void BlobBase::Reshape(const int num, const int channels, const int height,
@@ -128,9 +165,6 @@ void BlobBase::ShareDiff(const BlobBase& other) {
 // The "update" method is used for parameter blobs in a Net, which are stored
 // as Blob<float> or Blob<double> -- hence we do not define it for
 // Blob<int> or Blob<unsigned int>.
-template<> void BlobBase::Update<unsigned int,unsigned int>() { NOT_IMPLEMENTED; }
-template<> void BlobBase::Update<int,int>() { NOT_IMPLEMENTED; }
-
 template <typename Dtype, typename Mtype>
 void BlobBase::Update() {
   // We will perform update based on where the data is located.
@@ -157,15 +191,7 @@ void BlobBase::Update() {
   }
 }
 
-template<> unsigned int BlobBase::asum_data<unsigned int,unsigned int>() const {
-  NOT_IMPLEMENTED;
-  return 0;
-}
-
-template<> int BlobBase::asum_data<int,int>() const {
-  NOT_IMPLEMENTED;
-  return 0;
-}
+INSTANTIATE_BB_MEMBER_00(Update);
 
 template <typename Dtype, typename Mtype>
 Mtype BlobBase::asum_data() const {
@@ -192,15 +218,7 @@ Mtype BlobBase::asum_data() const {
   return 0;
 }
 
-template<> unsigned int BlobBase::asum_diff<unsigned int,unsigned int>() const {
-  NOT_IMPLEMENTED;
-  return 0;
-}
-
-template<> int BlobBase::asum_diff<int,int>() const {
-  NOT_IMPLEMENTED;
-  return 0;
-}
+INSTANTIATE_BB_MEMBER_20C(asum_data);
 
 template <typename Dtype, typename Mtype>
 Mtype BlobBase::asum_diff() const {
@@ -227,15 +245,7 @@ Mtype BlobBase::asum_diff() const {
   return 0;
 }
 
-template<> unsigned int BlobBase::sumsq_data<unsigned int,unsigned int>() const {
-  NOT_IMPLEMENTED;
-  return 0;
-}
-
-template<> int BlobBase::sumsq_data<int,int>() const {
-  NOT_IMPLEMENTED;
-  return 0;
-}
+INSTANTIATE_BB_MEMBER_20C(asum_diff);
 
 template <typename Dtype, typename Mtype>
 Mtype BlobBase::sumsq_data() const {
@@ -264,15 +274,7 @@ Mtype BlobBase::sumsq_data() const {
   return sumsq;
 }
 
-template<> unsigned int BlobBase::sumsq_diff<unsigned int,unsigned int>() const {
-  NOT_IMPLEMENTED;
-  return 0;
-}
-
-template<> int BlobBase::sumsq_diff<int,int>() const {
-  NOT_IMPLEMENTED;
-  return 0;
-}
+INSTANTIATE_BB_MEMBER_20C(sumsq_data);
 
 template <typename Dtype, typename Mtype>
 Mtype BlobBase::sumsq_diff() const {
@@ -301,13 +303,7 @@ Mtype BlobBase::sumsq_diff() const {
   return sumsq;
 }
 
-template<> void BlobBase::scale_data<unsigned int,unsigned int>(unsigned int scale_factor) {
-  NOT_IMPLEMENTED;
-}
-
-template<> void BlobBase::scale_data<int,int>(int scale_factor) {
-  NOT_IMPLEMENTED;
-}
+INSTANTIATE_BB_MEMBER_20C(sumsq_diff);
 
 template <typename Dtype, typename Mtype>
 void BlobBase::scale_data(Mtype scale_factor) {
@@ -315,13 +311,13 @@ void BlobBase::scale_data(Mtype scale_factor) {
   if (!data_) { return; }
   switch (data_->head()) {
   case SyncedMemory::HEAD_AT_CPU:
-    data = (const Dtype*)data_->mutable_cpu_data();
+    data = (Dtype*)data_->mutable_cpu_data();
     caffe_scal(count_, scale_factor, data);
     return;
   case SyncedMemory::HEAD_AT_GPU:
   case SyncedMemory::SYNCED:
 #ifndef CPU_ONLY
-    data = (const Dtype*)data_->mutable_gpu_data();
+    data = (Dtype*)data_->mutable_gpu_data();
     caffe_gpu_scal(count_, scale_factor, data);
     return;
 #else
@@ -334,13 +330,7 @@ void BlobBase::scale_data(Mtype scale_factor) {
   }
 }
 
-template<> void BlobBase::scale_diff<unsigned int,unsigned int>(unsigned int scale_factor) {
-  NOT_IMPLEMENTED;
-}
-
-template<> void BlobBase::scale_diff<int,int>(int scale_factor) {
-  NOT_IMPLEMENTED;
-}
+INSTANTIATE_BB_MEMBER_02(scale_data);
 
 template <typename Dtype, typename Mtype>
 void BlobBase::scale_diff(Mtype scale_factor) {
@@ -348,13 +338,13 @@ void BlobBase::scale_diff(Mtype scale_factor) {
   if (!diff_) { return; }
   switch (diff_->head()) {
   case SyncedMemory::HEAD_AT_CPU:
-    diff = (const Dtype*)diff_->mutable_cpu_data();
+    diff = (Dtype*)diff_->mutable_cpu_data();
     caffe_scal(count_, scale_factor, diff);
     return;
   case SyncedMemory::HEAD_AT_GPU:
   case SyncedMemory::SYNCED:
 #ifndef CPU_ONLY
-    diff = (const Dtype*)diff_->mutable_gpu_data();
+    diff = (Dtype*)diff_->mutable_gpu_data();
     caffe_gpu_scal(count_, scale_factor, diff);
     return;
 #else
@@ -366,6 +356,8 @@ void BlobBase::scale_diff(Mtype scale_factor) {
     LOG(FATAL) << "Unknown SyncedMemory head state: " << diff_->head();
   }
 }
+
+INSTANTIATE_BB_MEMBER_02(scale_diff);
 
 bool BlobBase::ShapeEquals(const BlobProto& other) {
   if (other.has_num() || other.has_channels() ||
@@ -603,6 +595,15 @@ void Blob<float16>::FromProto(const BlobProto& proto, bool reshape) {
 }
 
 #endif // CPU_ONLY
+
+template <>
+void Blob<int>::ToProto(BlobProto* proto, bool write_diff) const {
+  NOT_IMPLEMENTED;
+}
+template <>
+void Blob<unsigned int>::ToProto(BlobProto* proto, bool write_diff) const {
+  NOT_IMPLEMENTED;
+}
 
 INSTANTIATE_CLASS1(Blob);
 

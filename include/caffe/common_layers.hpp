@@ -525,7 +525,7 @@ class ReshapeLayer : public Layer<Dtype,Mtype> {
 
  protected:
   virtual void Forward_cpu(const vector<BlobBase*>& bottom,
-      const vector<BlobBase*>& top);
+      const vector<BlobBase*>& top) {}
   virtual void Backward_cpu(const vector<BlobBase*>& top,
       const vector<bool>& propagate_down, const vector<BlobBase*>& bottom) {}
   virtual void Forward_gpu(const vector<BlobBase*>& bottom,
@@ -596,7 +596,7 @@ class SilenceLayer : public Layer<Dtype,Mtype> {
   explicit SilenceLayer(const LayerParameter& param)
       : Layer<Dtype,Mtype>(param) {}
   virtual void Reshape(const vector<BlobBase*>& bottom,
-      const vector<BlobBase*>& top);
+      const vector<BlobBase*>& top) {}
 
   virtual inline const char* type() const { return "Silence"; }
   virtual inline int MinBottomBlobs() const { return 1; }
@@ -604,7 +604,7 @@ class SilenceLayer : public Layer<Dtype,Mtype> {
 
  protected:
   virtual void Forward_cpu(const vector<BlobBase*>& bottom,
-      const vector<BlobBase*>& top);
+      const vector<BlobBase*>& top) {}
   // We can't define Forward_gpu here, since STUB_GPU will provide
   // its own definition for CPU_ONLY mode.
   virtual void Forward_gpu(const vector<BlobBase*>& bottom,
