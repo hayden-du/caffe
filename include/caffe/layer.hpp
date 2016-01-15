@@ -62,6 +62,10 @@ public:
     SetLossWeights(top);
   }
 
+  template <typename DT, typename DB>
+  void SetUp(const vector<Blob<DB>*>& bottom, const vector<Blob<DT>*>& top) {} //FIXME
+
+
   /**
    * @brief Adjust the shapes of top blobs and internal buffers to accommodate
    *        the shapes of the bottom blobs.

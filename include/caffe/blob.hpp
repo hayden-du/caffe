@@ -60,6 +60,11 @@ class BlobBase {
     Reshape(other.shape());
   }
 
+
+  void CopyFrom(const BlobBase& source, bool copy_diff = false,
+      bool reshape = false) {} // FIXME
+
+
   inline string shape_string() const {
     ostringstream stream;
     for (int i = 0; i < shape_.size(); ++i) {
@@ -359,6 +364,13 @@ public:
    */
   void CopyFrom(const Blob<Dtype>& source, bool copy_diff = false,
       bool reshape = false);
+
+
+  void CopyFrom(const BlobBase& source, bool copy_diff = false,
+      bool reshape = false) {
+    BlobBase::CopyFrom(source, copy_diff, reshape);
+  } // FIXME
+
 
   inline Dtype data_at(const int n, const int c, const int h,
       const int w) const {

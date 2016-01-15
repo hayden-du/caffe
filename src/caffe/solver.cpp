@@ -670,7 +670,7 @@ void SGDSolver<Dtype,Mtype>::Regularize(int param_id) {
             net_params[param_id]->gpu_data_base<Dtype>(),
             net_params[param_id]->mutable_gpu_diff_base<Dtype>());
       } else if (regularization_type == "L1") {
-        caffe_gpu_sign<Dtype,Mtype>(net_params[param_id]->count(),
+        caffe_gpu_sign(net_params[param_id]->count(),
             net_params[param_id]->gpu_data_base<Dtype>(),
             temp_[param_id]->mutable_gpu_data());
         caffe_gpu_axpy<Dtype,Mtype>(net_params[param_id]->count(),

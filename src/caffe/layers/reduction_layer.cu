@@ -72,7 +72,7 @@ void ReductionLayer<Dtype,Mtype>::Backward_gpu(const vector<BlobBase*>& top,
       caffe_gpu_set<Dtype,Mtype>(dim_, bottom_coeff, bottom_diff);
       break;
     case ReductionParameter_ReductionOp_ASUM:
-      caffe_gpu_sign<Dtype,Mtype>(dim_, bottom_data, bottom_diff);
+      caffe_gpu_sign(dim_, bottom_data, bottom_diff);
       caffe_gpu_scal<Dtype,Mtype>(dim_, bottom_coeff, bottom_diff);
       break;
     case ReductionParameter_ReductionOp_SUMSQ:

@@ -210,9 +210,8 @@ TYPED_TEST(GPUMathFunctionsTest, TestAsum) {
 
 TYPED_TEST(GPUMathFunctionsTest, TestSign) {
   typedef typename TypeParam::Dtype Dtype;
-  typedef typename TypeParam::Mtype Mtype;
   int n = this->blob_bottom_->count();
-  caffe_gpu_sign<Dtype,Mtype>(n, this->blob_bottom_->gpu_data(),
+  caffe_gpu_sign(n, this->blob_bottom_->gpu_data(),
                             this->blob_bottom_->mutable_gpu_diff());
   const Dtype* signs = this->blob_bottom_->cpu_diff();
   const Dtype* x = this->blob_bottom_->cpu_data();
@@ -223,10 +222,9 @@ TYPED_TEST(GPUMathFunctionsTest, TestSign) {
 
 TYPED_TEST(GPUMathFunctionsTest, TestSgnbit) {
   typedef typename TypeParam::Dtype Dtype;
-  typedef typename TypeParam::Mtype Mtype;
   int n = this->blob_bottom_->count();
-  caffe_gpu_sgnbit<Dtype,Mtype>(n, this->blob_bottom_->gpu_data(),
-                            this->blob_bottom_->mutable_gpu_diff());
+  caffe_gpu_sgnbit(n, this->blob_bottom_->gpu_data(),
+                   this->blob_bottom_->mutable_gpu_diff());
   const Dtype* signbits = this->blob_bottom_->cpu_diff();
   const Dtype* x = this->blob_bottom_->cpu_data();
   for (int i = 0; i < n; ++i) {

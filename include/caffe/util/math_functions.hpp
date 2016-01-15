@@ -253,42 +253,39 @@ uint32_t caffe_gpu_hamming_distance(const int n, const Dtype* x,
 template <typename Dtype, typename Mtype>
 void caffe_gpu_asum(const int n, const Dtype* x, Mtype* y);
 
-template<typename Dtype, typename Mtype>
+template<typename Dtype>
 void caffe_gpu_sign(const int n, const Dtype* x, Dtype* y);
 
-template<typename Dtype, typename Mtype>
+template<typename Dtype>
 void caffe_gpu_sgnbit(const int n, const Dtype* x, Dtype* y);
-
-template <typename Dtype, typename Mtype>
-void caffe_gpu_fabs(const int n, const Dtype* x, Dtype* y);
 
 template <typename Dtype, typename Mtype>
 void caffe_gpu_scale(const int n, const Mtype alpha, const Dtype *x, Dtype* y);
 
 
 #define DEFINE_AND_INSTANTIATE_GPU_UNARY_FUNC(name, operation) \
-template<typename Dtype, typename Mtype> \
+template<typename Dtype> \
 __global__ void name##_kernel(const int n, const Dtype* x, Dtype* y) { \
   CUDA_KERNEL_LOOP(index, n) { \
     operation; \
   } \
 } \
 template <> \
-void caffe_gpu_##name<float,float>(const int n, const float* x, float* y) { \
+void caffe_gpu_##name<float>(const int n, const float* x, float* y) { \
   /* NOLINT_NEXT_LINE(whitespace/operators) */ \
-  name##_kernel<float,float><<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>( \
+  name##_kernel<float><<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>( \
       n, x, y); \
 } \
 template <> \
-void caffe_gpu_##name<double,double>(const int n, const double* x, double* y) { \
+void caffe_gpu_##name<double>(const int n, const double* x, double* y) { \
   /* NOLINT_NEXT_LINE(whitespace/operators) */ \
-  name##_kernel<double,double><<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>( \
+  name##_kernel<double><<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>( \
       n, x, y); \
 } \
 template <> \
-void caffe_gpu_##name<float16,CAFFE_FP16_MTYPE>(const int n, const float16* x, float16* y) { \
+void caffe_gpu_##name<float16>(const int n, const float16* x, float16* y) { \
   /* NOLINT_NEXT_LINE(whitespace/operators) */ \
-  name##_kernel<float16,CAFFE_FP16_MTYPE><<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>( \
+  name##_kernel<float16><<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>( \
       n, x, y); \
 } 
 #endif  // !CPU_ONLY
