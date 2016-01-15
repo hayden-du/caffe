@@ -39,10 +39,10 @@ void EltwiseLayer<Dtype,Mtype>::Forward_gpu(const vector<BlobBase*>& bottom,
   Dtype* top_data = top[0]->mutable_gpu_data_base<Dtype>();
   switch (op_) {
   case EltwiseParameter_EltwiseOp_PROD:
-    caffe_gpu_mul<Dtype,Mtype>(count, bottom[0]->gpu_data_base<Dtype>(),
+    caffe_gpu_mul(count, bottom[0]->gpu_data_base<Dtype>(),
         bottom[1]->gpu_data_base<Dtype>(), top_data);
     for (int i = 2; i < bottom.size(); ++i) {
-      caffe_gpu_mul<Dtype,Mtype>(count, top_data, bottom[i]->gpu_data_base<Dtype>(), top_data);
+      caffe_gpu_mul(count, top_data, bottom[i]->gpu_data_base<Dtype>(), top_data);
     }
     break;
   case EltwiseParameter_EltwiseOp_SUM:
@@ -101,14 +101,14 @@ void EltwiseLayer<Dtype,Mtype>::Backward_gpu(const vector<BlobBase*>& top,
               caffe_copy(count, bottom[j]->gpu_data_base<Dtype>(), bottom_diff);
               initialized = true;
             } else {
-              caffe_gpu_mul<Dtype,Mtype>(count, bottom[j]->gpu_data_base<Dtype>(), bottom_diff,
+              caffe_gpu_mul(count, bottom[j]->gpu_data_base<Dtype>(), bottom_diff,
                             bottom_diff);
             }
           }
         } else {
-          caffe_gpu_div<Dtype,Mtype>(count, top_data, bottom_data, bottom_diff);
+          caffe_gpu_div(count, top_data, bottom_data, bottom_diff);
         }
-        caffe_gpu_mul<Dtype,Mtype>(count, bottom_diff, top_diff, bottom_diff);
+        caffe_gpu_mul(count, bottom_diff, top_diff, bottom_diff);
         break;
       case EltwiseParameter_EltwiseOp_SUM:
         if (coeffs_[i] == Mtype(1.)) {

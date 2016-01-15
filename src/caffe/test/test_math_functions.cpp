@@ -236,9 +236,8 @@ TYPED_TEST(GPUMathFunctionsTest, TestSgnbit) {
 
 TYPED_TEST(GPUMathFunctionsTest, TestFabs) {
   typedef typename TypeParam::Dtype Dtype;
-  typedef typename TypeParam::Mtype Mtype;
   int n = this->blob_bottom_->count();
-  caffe_gpu_abs<Dtype,Mtype>(n, this->blob_bottom_->gpu_data(),
+  caffe_gpu_abs(n, this->blob_bottom_->gpu_data(),
                             this->blob_bottom_->mutable_gpu_diff());
   const Dtype* abs_val = this->blob_bottom_->cpu_diff();
   const Dtype* x = this->blob_bottom_->cpu_data();

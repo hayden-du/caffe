@@ -261,7 +261,7 @@ TYPED_TEST(AccuracyLayerTest, TestForwardCPUTopK) {
   }
 
   EXPECT_NEAR(this->blob_top_->data_at(0, 0, 0, 0),
-              num_correct_labels / 100.0, 1e-4);
+              num_correct_labels / 100.0, choose<Dtype>(1e-4,5e-4));
 }
 
 TYPED_TEST(AccuracyLayerTest, TestForwardCPUPerClass) {

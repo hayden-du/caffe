@@ -12,7 +12,7 @@ template <typename Dtype, typename Mtype>
 void ContrastiveLossLayer<Dtype,Mtype>::Forward_gpu(
     const vector<BlobBase*>& bottom, const vector<BlobBase*>& top) {
   const int count = bottom[0]->count();
-  caffe_gpu_sub<Dtype,Mtype>(
+  caffe_gpu_sub(
       count,
       bottom[0]->gpu_data_base<Dtype>(),  // a
       bottom[1]->gpu_data_base<Dtype>(),  // b

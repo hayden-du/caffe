@@ -941,7 +941,7 @@ void AdaGradSolver<Dtype,Mtype>::ComputeUpdateValue(int param_id, Dtype rate) {
         this->update_[param_id]->mutable_gpu_data());
 
     // update history
-    caffe_gpu_add<Dtype,Mtype>(net_params[param_id]->count(),
+    caffe_gpu_add(net_params[param_id]->count(),
         this->update_[param_id]->gpu_data(),
         this->history_[param_id]->gpu_data(),
         this->history_[param_id]->mutable_gpu_data());
@@ -954,7 +954,7 @@ void AdaGradSolver<Dtype,Mtype>::ComputeUpdateValue(int param_id, Dtype rate) {
     caffe_gpu_add_scalar<Dtype,Mtype>(net_params[param_id]->count(),
               delta, this->update_[param_id]->mutable_gpu_data());
 
-    caffe_gpu_div<Dtype,Mtype>(net_params[param_id]->count(),
+    caffe_gpu_div(net_params[param_id]->count(),
               net_params[param_id]->gpu_diff_base<Dtype>(),
               this->update_[param_id]->gpu_data(),
               this->update_[param_id]->mutable_gpu_data());
@@ -1035,7 +1035,7 @@ void RMSPropSolver<Dtype,Mtype>::ComputeUpdateValue(int param_id, Dtype rate) {
     caffe_gpu_add_scalar<Dtype,Mtype>(net_params[param_id]->count(),
         delta, this->update_[param_id]->mutable_gpu_data());
 
-    caffe_gpu_div<Dtype,Mtype>(net_params[param_id]->count(),
+    caffe_gpu_div(net_params[param_id]->count(),
         net_params[param_id]->gpu_diff_base<Dtype>(), this->update_[param_id]->gpu_data(),
         this->update_[param_id]->mutable_gpu_data());
 
@@ -1149,18 +1149,18 @@ void AdaDeltaSolver<Dtype,Mtype>::ComputeUpdateValue(int param_id, Dtype rate) {
     caffe_gpu_set<Dtype,Mtype>(net_params[param_id]->count(), delta,
         this->temp_[param_id]->mutable_gpu_data());
 
-    caffe_gpu_add<Dtype,Mtype>(net_params[param_id]->count(),
+    caffe_gpu_add(net_params[param_id]->count(),
         this->temp_[param_id]->gpu_data(),
         this->history_[update_history_offset + param_id]->gpu_data(),
         this->update_[param_id]->mutable_gpu_data());
 
-    caffe_gpu_add<Dtype,Mtype>(net_params[param_id]->count(),
+    caffe_gpu_add(net_params[param_id]->count(),
         this->temp_[param_id]->gpu_data(),
         this->history_[param_id]->gpu_data(),
         this->temp_[param_id]->mutable_gpu_data());
 
     // divide history of updates by history of gradients
-    caffe_gpu_div<Dtype,Mtype>(net_params[param_id]->count(),
+    caffe_gpu_div(net_params[param_id]->count(),
         this->update_[param_id]->gpu_data(),
         this->temp_[param_id]->gpu_data(),
         this->update_[param_id]->mutable_gpu_data());
@@ -1171,7 +1171,7 @@ void AdaDeltaSolver<Dtype,Mtype>::ComputeUpdateValue(int param_id, Dtype rate) {
         this->update_[param_id]->mutable_gpu_data());
 
     // compute the update and copy to net_diff
-    caffe_gpu_mul<Dtype,Mtype>(net_params[param_id]->count(),
+    caffe_gpu_mul(net_params[param_id]->count(),
         net_params[param_id]->gpu_diff_base<Dtype>(),
         this->update_[param_id]->gpu_data(),
         net_params[param_id]->mutable_gpu_diff_base<Dtype>());
@@ -1273,7 +1273,7 @@ void AdamSolver<Dtype,Mtype>::ComputeUpdateValue(int param_id, Dtype rate) {
         val_m->mutable_gpu_data());
 
     // update v <- \beta_2 m_{t-1} + (1-\beta_2)g_t^2
-    caffe_gpu_mul<Dtype,Mtype>(N,
+    caffe_gpu_mul(N,
         net_params[param_id]->gpu_diff_base<Dtype>(),
         net_params[param_id]->gpu_diff_base<Dtype>(),
         val_t->mutable_gpu_data());
@@ -1287,7 +1287,7 @@ void AdamSolver<Dtype,Mtype>::ComputeUpdateValue(int param_id, Dtype rate) {
         val_t->mutable_gpu_data());
     caffe_gpu_add_scalar<Dtype,Mtype>(N, eps_hat,
         val_t->mutable_gpu_data());
-    caffe_gpu_div<Dtype,Mtype>(N,
+    caffe_gpu_div(N,
         val_m->gpu_data(),
         val_t->gpu_data(),
         val_t->mutable_gpu_data());

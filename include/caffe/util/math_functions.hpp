@@ -200,22 +200,22 @@ void caffe_gpu_add_scalar(const int N, const Mtype alpha, Dtype *X);
 template <typename Dtype, typename Mtype>
 void caffe_gpu_scal(const int N, const Mtype alpha, Dtype *X);
 
-template <typename Dtype, typename Mtype>
+template <typename Dtype>
 void caffe_gpu_add(const int N, const Dtype* a, const Dtype* b, Dtype* y);
 
-template <typename Dtype, typename Mtype>
+template <typename Dtype>
 void caffe_gpu_sub(const int N, const Dtype* a, const Dtype* b, Dtype* y);
 
-template <typename Dtype, typename Mtype>
+template <typename Dtype>
 void caffe_gpu_mul(const int N, const Dtype* a, const Dtype* b, Dtype* y);
 
-template <typename Dtype, typename Mtype>
+template <typename Dtype>
 void caffe_gpu_div(const int N, const Dtype* a, const Dtype* b, Dtype* y);
 
-template <typename Dtype, typename Mtype>
+template <typename Dtype>
 void caffe_gpu_abs(const int n, const Dtype* a, Dtype* y);
 
-template <typename Dtype, typename Mtype>
+template <typename Dtype>
 void caffe_gpu_exp(const int n, const Dtype* a, Dtype* y);
 
 template <typename Dtype>

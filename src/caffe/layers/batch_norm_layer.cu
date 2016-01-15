@@ -82,7 +82,7 @@ void BatchNormLayer<Dtype,Mtype>::Forward_gpu(const vector<BlobBase*>& bottom,
   caffe_gpu_gemm(CblasNoTrans, CblasNoTrans, channels_ * num,
       spatial_dim, 1, Mtype(1.), num_by_chans_.gpu_data(),
       spatial_sum_multiplier_.gpu_data(), Mtype(0.), temp_.mutable_gpu_data());
-  caffe_gpu_div<Dtype,Mtype>(temp_.count(), top_data, temp_.gpu_data(), top_data);
+  caffe_gpu_div(temp_.count(), top_data, temp_.gpu_data(), top_data);
   // TODO(cdoersch): The caching is only needed because later in-place layers
   //                 might clobber the data.  Can we skip this if they won't?
   caffe_copy(x_norm_.count(), top_data,
@@ -102,7 +102,7 @@ void BatchNormLayer<Dtype,Mtype>::Backward_gpu(const vector<BlobBase*>& top,
   }
   Dtype* bottom_diff = bottom[0]->mutable_gpu_diff_base<Dtype>();
   if (use_global_stats_) {
-    caffe_gpu_div<Dtype,Mtype>(temp_.count(), top_diff, temp_.gpu_data(), bottom_diff);
+    caffe_gpu_div(temp_.count(), top_diff, temp_.gpu_data(), bottom_diff);
     return;
   }
   const Dtype* top_data = x_norm_.gpu_data();
@@ -121,7 +121,7 @@ void BatchNormLayer<Dtype,Mtype>::Backward_gpu(const vector<BlobBase*>& top,
   // dimensions except the channels dimension where required.
 
   // sum(dE/dY \cdot Y)
-  caffe_gpu_mul<Dtype,Mtype>(temp_.count(), top_data, top_diff, bottom_diff);
+  caffe_gpu_mul(temp_.count(), top_data, top_diff, bottom_diff);
   caffe_gpu_gemv<Dtype,Mtype>(CblasNoTrans, channels_ * num, spatial_dim, 1.,
       bottom_diff, spatial_sum_multiplier_.gpu_data(), 0.,
       num_by_chans_.mutable_gpu_data());
@@ -138,7 +138,7 @@ void BatchNormLayer<Dtype,Mtype>::Backward_gpu(const vector<BlobBase*>& top,
       spatial_sum_multiplier_.gpu_data(), Mtype(0.), bottom_diff);
 
   // sum(dE/dY \cdot Y) \cdot Y
-  caffe_gpu_mul<Dtype,Mtype>(temp_.count(), top_data, bottom_diff, bottom_diff);
+  caffe_gpu_mul(temp_.count(), top_data, bottom_diff, bottom_diff);
 
   // sum(dE/dY)-sum(dE/dY \cdot Y) \cdot Y
   caffe_gpu_gemv<Dtype,Mtype>(CblasNoTrans, channels_ * num, spatial_dim, 1.,
@@ -162,7 +162,7 @@ void BatchNormLayer<Dtype,Mtype>::Backward_gpu(const vector<BlobBase*>& top,
 
   // note: temp_ still contains sqrt(var(X)+eps), computed during the forward
   // pass.
-  caffe_gpu_div<Dtype,Mtype>(temp_.count(), bottom_diff, temp_.gpu_data(), bottom_diff);
+  caffe_gpu_div(temp_.count(), bottom_diff, temp_.gpu_data(), bottom_diff);
 }
 
 INSTANTIATE_LAYER_GPU_FUNCS(BatchNormLayer);

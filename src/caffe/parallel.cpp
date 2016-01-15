@@ -378,7 +378,7 @@ void P2PSync<Dtype,Mtype>::on_gradients_ready() {
     CHECK(attributes.device == device);
 #endif
 
-    caffe_gpu_add<Dtype,Mtype>(size_, src, dst, dst);
+    caffe_gpu_add(size_, src, dst, dst);
   }
 
   // Send gradients to parent

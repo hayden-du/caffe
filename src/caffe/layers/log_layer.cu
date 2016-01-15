@@ -49,7 +49,7 @@ void LogLayer<Dtype,Mtype>::Backward_gpu(const vector<BlobBase*>& top,
     if (backward_num_scale_ != 1) {
       caffe_gpu_scal<Dtype,Mtype>(count, backward_num_scale_, bottom_diff);
     }
-    caffe_gpu_mul<Dtype,Mtype>(count, top_diff, bottom_diff, bottom_diff);
+    caffe_gpu_mul(count, top_diff, bottom_diff, bottom_diff);
 }
 
 INSTANTIATE_LAYER_GPU_FUNCS(LogLayer);

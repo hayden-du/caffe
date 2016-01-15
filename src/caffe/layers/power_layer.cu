@@ -60,7 +60,7 @@ void PowerLayer<Dtype,Mtype>::Backward_gpu(const vector<BlobBase*>& top,
         //              = scale * power * (scale * x)^power * (scale * x)^(-1)
         //              = power * y / x
         const Dtype* top_data = top[0]->gpu_data_base<Dtype>();
-        caffe_gpu_div<Dtype,Mtype>(count, top_data, bottom_data, bottom_diff);
+        caffe_gpu_div(count, top_data, bottom_data, bottom_diff);
         caffe_gpu_scal<Dtype,Mtype>(count, power_, bottom_diff);
       } else {
         caffe_copy(count, bottom_data, bottom_diff);
@@ -71,13 +71,13 @@ void PowerLayer<Dtype,Mtype>::Backward_gpu(const vector<BlobBase*>& top,
           caffe_gpu_add_scalar<Dtype,Mtype>(count, shift_, bottom_diff);
         }
         const Dtype* top_data = top[0]->gpu_data_base<Dtype>();
-        caffe_gpu_div<Dtype,Mtype>(count, top_data, bottom_diff, bottom_diff);
+        caffe_gpu_div(count, top_data, bottom_diff, bottom_diff);
         if (diff_scale_ != Mtype(1)) {
           caffe_gpu_scal<Dtype,Mtype>(count, diff_scale_, bottom_diff);
         }
       }
     }
-    caffe_gpu_mul<Dtype,Mtype>(count, top_diff, bottom_diff, bottom_diff);
+    caffe_gpu_mul(count, top_diff, bottom_diff, bottom_diff);
   }
 }
 
