@@ -300,7 +300,7 @@ TYPED_TEST(AccuracyLayerTest, TestForwardCPUPerClass) {
     float accuracy_per_class = num_per_class[i] > 0 ?
         static_cast<float>(correct_per_class[i]) / num_per_class[i] : 0.;
     EXPECT_NEAR(this->blob_top_per_class_->data_at(i, 0, 0, 0),
-    		accuracy_per_class, 1e-4);
+    		accuracy_per_class, choose<Dtype>(1e-4,2e-4));
   }
 }
 

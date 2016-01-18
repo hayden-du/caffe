@@ -2,8 +2,6 @@
 #include <algorithm>
 #include <cfloat>
 #include <vector>
-#include <cudnn.h>
-#include <cudnnSharedTest.h>
 
 #include "thrust/device_vector.h"
 
@@ -21,13 +19,8 @@ void CuDNNBatchNormLayer<Dtype,Mtype>::Forward_gpu(
   const void* scale_data = this->blobs_[0]->template gpu_data_base<Dtype>();
   const void* bias_data = this->blobs_[1]->template gpu_data_base<Dtype>();
 
-  cudnnTensorDescriptor_t sbdesc = scale_bias_mean_var_desc_;
   Blob<float> f_scale_data, f_bias_data;
-  cudnnTensorStruct fdesc;
   if (sizeof(Dtype) < 4) {
-    CUDNN_CHECK(cudnnSetTensorNdDescriptor(&fdesc,
-        CUDNN_DATA_FLOAT, sbdesc->nbDims, sbdesc->dimA, sbdesc->strideA));
-    sbdesc = &fdesc;
     f_scale_data.ReshapeLike(*this->blobs_[0]);
     f_bias_data.ReshapeLike(*this->blobs_[1]);
     caffe_gpu_convert(f_scale_data.count(),
@@ -55,7 +48,7 @@ void CuDNNBatchNormLayer<Dtype,Mtype>::Forward_gpu(
       bottom_data,
       bottom_desc_,
       top_data,
-      sbdesc, //scale_bias_mean_var_desc_,
+      scale_bias_mean_var_desc_,
       scale_data,
       bias_data,
       1-this->moving_average_fraction_,
@@ -74,7 +67,7 @@ void CuDNNBatchNormLayer<Dtype,Mtype>::Forward_gpu(
       bottom_data,
       bottom_desc_,
       top_data,
-      sbdesc, //scale_bias_mean_var_desc_,
+      scale_bias_mean_var_desc_,
       scale_data,
       bias_data,
       this->blobs_[3]->template gpu_data_base<Dtype>(),  // mean
@@ -100,13 +93,8 @@ void CuDNNBatchNormLayer<Dtype,Mtype>::Backward_gpu(
   void* scale_diff = this->blobs_[0]->template mutable_gpu_diff_base<Dtype>();
   void* bias_diff = this->blobs_[1]->template mutable_gpu_diff_base<Dtype>();
 
-  cudnnTensorDescriptor_t sbdesc = scale_bias_mean_var_desc_;
   Blob<float> f_scale_data, f_scale_diff, f_bias_diff;
-  cudnnTensorStruct fdesc;
   if (sizeof(Dtype) < 4) {
-    CUDNN_CHECK(cudnnSetTensorNdDescriptor(&fdesc,
-        CUDNN_DATA_FLOAT, sbdesc->nbDims, sbdesc->dimA, sbdesc->strideA));
-    sbdesc = &fdesc;
     f_scale_data.ReshapeLike(*this->blobs_[0]);
     f_scale_diff.ReshapeLike(*this->blobs_[0]);
     f_bias_diff.ReshapeLike(*this->blobs_[1]);
@@ -130,13 +118,15 @@ void CuDNNBatchNormLayer<Dtype,Mtype>::Backward_gpu(
       mode_,
       cudnn::dataType<Dtype>::one,
       cudnn::dataType<Dtype>::zero,
+      cudnn::dataType<Dtype>::one,
+      cudnn::dataType<Dtype>::zero,
       bottom_desc_,
       bottom_data,
       bottom_desc_,
       top_diff,
       bottom_desc_,
       bottom_diff,
-      sbdesc, //scale_bias_mean_var_desc_,
+      scale_bias_mean_var_desc_,
       scale_data,
       scale_diff,
       bias_diff,
