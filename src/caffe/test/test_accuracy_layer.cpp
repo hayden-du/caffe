@@ -143,7 +143,7 @@ TYPED_TEST(AccuracyLayerTest, TestForwardCPU) {
     }
   }
   EXPECT_NEAR(this->blob_top_->data_at(0, 0, 0, 0),
-              num_correct_labels / 100.0, 1e-4);
+              num_correct_labels / 100.0, choose<Dtype>(1e-4,2e-2));
 }
 
 TYPED_TEST(AccuracyLayerTest, TestForwardWithSpatialAxes) {
@@ -228,7 +228,7 @@ TYPED_TEST(AccuracyLayerTest, TestForwardIgnoreLabel) {
   }
   EXPECT_EQ(count, 97);  // We set 3 out of 100 labels to kIgnoreLabelValue.
   EXPECT_NEAR(this->blob_top_->data_at(0, 0, 0, 0),
-      static_cast<float>(num_correct_labels) / count, 1e-4);
+      static_cast<float>(num_correct_labels) / count, choose<Dtype>(1e-4,2e-2));
 }
 
 TYPED_TEST(AccuracyLayerTest, TestForwardCPUTopK) {
@@ -261,7 +261,7 @@ TYPED_TEST(AccuracyLayerTest, TestForwardCPUTopK) {
   }
 
   EXPECT_NEAR(this->blob_top_->data_at(0, 0, 0, 0),
-              num_correct_labels / 100.0, choose<Dtype>(1e-4,5e-4));
+              num_correct_labels / 100.0, choose<Dtype>(1e-4,2e-2));
 }
 
 TYPED_TEST(AccuracyLayerTest, TestForwardCPUPerClass) {
@@ -348,12 +348,12 @@ TYPED_TEST(AccuracyLayerTest, TestForwardCPUPerClassWithIgnoreLabel) {
   }
   EXPECT_EQ(count, 97);
   EXPECT_NEAR(this->blob_top_->data_at(0, 0, 0, 0),
-      static_cast<float>(num_correct_labels) / count, 1e-4);
+      static_cast<float>(num_correct_labels) / count, choose<Dtype>(1e-4,2e-2));
   for (int i = 0; i < 10; ++i) {
     float accuracy_per_class = num_per_class[i] > 0 ?
         static_cast<float>(correct_per_class[i]) / num_per_class[i] : 0.;
     EXPECT_NEAR(this->blob_top_per_class_->data_at(i, 0, 0, 0),
-    		accuracy_per_class, choose<Dtype>(1e-4,2e-4));
+    		accuracy_per_class, choose<Dtype>(1e-4,2e-2));
   }
 }
 

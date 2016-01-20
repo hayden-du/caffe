@@ -407,7 +407,8 @@ class GradientBasedSolverTest : public MultiDeviceTest<TypeParam> {
       const Mtype solver_history = history[1]->cpu_data()[0];
       const Mtype error_margin_hist = std::max(kMinPrecision, kPrecision *
           std::min(fabs(expected_history), fabs(solver_history)));
-      EXPECT_NEAR(expected_history, solver_history, error_margin_hist);
+      EXPECT_NEAR(expected_history, solver_history,
+          choose<Dtype>(error_margin_hist, error_margin_hist * 2.F));
     }
   }
 

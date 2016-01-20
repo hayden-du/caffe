@@ -20,7 +20,12 @@
 #include "caffe/util/float16.hpp"
 
 #ifndef CPU_ONLY
-#include "cuda_fp16.h"
+#  include "cuda_fp16.h"
+#  if CUDA_VERSION >= 8000
+#    define CAFFE_DATA_HALF CUDA_R_16F
+#  else
+#    define CAFFE_DATA_HALF CUBLAS_DATA_HALF
+#  endif
 #endif
 
 // We only build 1 flavor per host architecture:

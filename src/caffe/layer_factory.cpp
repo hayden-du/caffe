@@ -81,7 +81,15 @@ shared_ptr<LayerBase> GetPoolingLayer(const LayerParameter& param) {
                 << "Using Caffe's own pooling layer.";
       return InstantiateLayer<PoolingLayer>(param);
     }
-    return InstantiateLayer<CuDNNPoolingLayer>(param);
+
+// CuDNN handles tie breaks differently than Caffe for MaxPooling.
+// Until there is a workaround in Caffe (index management) or cuDNN,
+// use Caffe layer to max pooling
+    if (param.pooling_param().pool() == PoolingParameter_PoolMethod_MAX) {
+        return InstantiateLayer<PoolingLayer>(param);
+    } else {
+        return InstantiateLayer<CuDNNPoolingLayer>(param);
+    }
 #endif
   } else {
     LOG(FATAL) << "Layer " << param.name() << " has unknown engine.";
