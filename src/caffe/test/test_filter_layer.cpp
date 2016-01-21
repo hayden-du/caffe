@@ -72,7 +72,8 @@ TYPED_TEST(FilterLayerTest, TestReshape) {
   LayerParameter layer_param;
   FilterLayer<Dtype,Mtype> layer(layer_param);
   layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
-  layer.Reshape(this->blob_bottom_vec_, this->blob_top_vec_);
+  layer.Reshape(blob_base_vector(this->blob_bottom_vec_),
+      blob_base_vector(this->blob_top_vec_));
   // In the test first and last items should have been filtered
   // so we just expect 2 remaining items
   EXPECT_EQ(this->blob_top_data_->shape(0), 2);
@@ -93,12 +94,13 @@ TYPED_TEST(FilterLayerTest, TestForward) {
   LayerParameter layer_param;
   FilterLayer<Dtype,Mtype> layer(layer_param);
   layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
-  layer.Reshape(this->blob_bottom_vec_, this->blob_top_vec_);
+  layer.Reshape(blob_base_vector(this->blob_bottom_vec_),
+      blob_base_vector(this->blob_top_vec_));
   layer.Forward(this->blob_bottom_vec_, this->blob_top_vec_);
-  EXPECT_EQ(this->blob_top_labels_->data_at(0, 0, 0, 0),
-      this->blob_bottom_labels_->data_at(1, 0, 0, 0));
-  EXPECT_EQ(this->blob_top_labels_->data_at(1, 0, 0, 0),
-      this->blob_bottom_labels_->data_at(2, 0, 0, 0));
+  EXPECT_EQ(this->blob_top_labels_->template instance<Dtype>()->data_at(0, 0, 0, 0),
+      this->blob_bottom_labels_->template instance<Dtype>()->data_at(1, 0, 0, 0));
+  EXPECT_EQ(this->blob_top_labels_->template instance<Dtype>()->data_at(1, 0, 0, 0),
+      this->blob_bottom_labels_->template instance<Dtype>()->data_at(2, 0, 0, 0));
 
   int dim = this->blob_top_data_->count() /
       this->blob_top_data_->shape(0);

@@ -17,7 +17,7 @@ namespace caffe {
 // accumulate through explicit loops over input, output, and filters.
 template <typename Dtype>
 void caffe_conv(const Blob<Dtype>* in, ConvolutionParameter* conv_param,
-    const vector<shared_ptr<Blob<Dtype> > >& weights,
+    const vector<shared_ptr<BlobBase> >& weights,
     Blob<Dtype>* out) {
   const bool has_depth = (out->num_axes() == 5);
   if (!has_depth) { CHECK_EQ(4, out->num_axes()); }
@@ -97,7 +97,7 @@ void caffe_conv(const Blob<Dtype>* in, ConvolutionParameter* conv_param,
                         out_offset[3 + has_depth] = x;
                         out_data[out->offset(out_offset)] +=
                             in->data_at(in_offset)
-                            * weights[0]->data_at(weight_offset);
+                            * weights[0]->instance<Dtype>()->data_at(weight_offset);
                       }
                     }
                   }
@@ -111,7 +111,7 @@ void caffe_conv(const Blob<Dtype>* in, ConvolutionParameter* conv_param,
   }
   // Bias
   if (conv_param->bias_term()) {
-    const Dtype* bias_data = weights[1]->cpu_data();
+    const Dtype* bias_data = weights[1]->cpu_data_base<Dtype>();
     for (int n = 0; n < out->shape(0); n++) {
       for (int o = 0; o < out->shape(1); o++) {
         for (int z = 0; z < (has_depth ? out->shape(2) : 1); z++) {
@@ -133,11 +133,11 @@ void caffe_conv(const Blob<Dtype>* in, ConvolutionParameter* conv_param,
 
 template void caffe_conv(const Blob<float>* in,
     ConvolutionParameter* conv_param,
-    const vector<shared_ptr<Blob<float> > >& weights,
+    const vector<shared_ptr<BlobBase> >& weights,
     Blob<float>* out);
 template void caffe_conv(const Blob<double>* in,
     ConvolutionParameter* conv_param,
-    const vector<shared_ptr<Blob<double> > >& weights,
+    const vector<shared_ptr<BlobBase> >& weights,
     Blob<double>* out);
 
 template <typename TypeParam>
@@ -280,8 +280,8 @@ TYPED_TEST(ConvolutionLayerTest, Test0DConvolution) {
   layer->Forward(this->blob_bottom_vec_, this->blob_top_vec_);
   // Check against reference convolution.
   vector<int> weight_offset(2);
-  const Blob<Dtype>* weight = layer->blobs()[0].get();
-  const Blob<Dtype>* bias = layer->blobs()[1].get();
+  const Blob<Dtype>* weight = layer->blobs()[0]->template instance<Dtype>();
+  const Blob<Dtype>* bias = layer->blobs()[1]->template instance<Dtype>();
   const int num = this->blob_top_->count(3);
   const int dim = this->blob_top_->shape(3);
   const int bottom_dim = this->blob_bottom_->shape(3);
@@ -430,7 +430,7 @@ TYPED_TEST(ConvolutionLayerTest, TestSobelConvolution) {
       new ConvolutionLayer<Dtype,Mtype>(layer_param));
   layer->blobs().resize(1);
   layer->blobs()[0].reset(new Blob<Dtype>(1, 3, 3, 3));
-  Dtype* weights = layer->blobs()[0]->mutable_cpu_data();
+  Dtype* weights = layer->blobs()[0]->template mutable_cpu_data_base<Dtype>();
   for (int c = 0; c < 3; ++c) {
     int i = c * 9;  // 3 x 3 filter
     weights[i +  0] =  -1;
@@ -463,7 +463,7 @@ TYPED_TEST(ConvolutionLayerTest, TestSobelConvolution) {
   layer.reset(new ConvolutionLayer<Dtype,Mtype>(layer_param));
   layer->blobs().resize(1);
   layer->blobs()[0].reset(new Blob<Dtype>(1, 3, 3, 1));
-  Dtype* weights_1 = layer->blobs()[0]->mutable_cpu_data();
+  Dtype* weights_1 = layer->blobs()[0]->template mutable_cpu_data_base<Dtype>();
   for (int c = 0; c < 3; ++c) {
     int i = c * 3;  // 3 x 1 filter
     weights_1[i +  0] = 1;
@@ -485,7 +485,7 @@ TYPED_TEST(ConvolutionLayerTest, TestSobelConvolution) {
   layer.reset(new ConvolutionLayer<Dtype,Mtype>(layer_param));
   layer->blobs().resize(1);
   layer->blobs()[0].reset(new Blob<Dtype>(1, 1, 1, 3));
-  Dtype* weights_2 = layer->blobs()[0]->mutable_cpu_data();
+  Dtype* weights_2 = layer->blobs()[0]->template mutable_cpu_data_base<Dtype>();
   weights_2[0] = -1;
   weights_2[1] = 0;
   weights_2[2] = 1;
@@ -885,7 +885,7 @@ TYPED_TEST(CuDNNConvolutionLayerTest, TestSobelConvolutionCuDNN) {
       new CuDNNConvolutionLayer<Dtype,Mtype>(layer_param));
   layer->blobs().resize(1);
   layer->blobs()[0].reset(new Blob<Dtype>(1, 3, 3, 3));
-  Dtype* weights = layer->blobs()[0]->mutable_cpu_data();
+  Dtype* weights = layer->blobs()[0]->template mutable_cpu_data_base<Dtype>();
   for (int c = 0; c < 3; ++c) {
     int i = c * 9;  // 3 x 3 filter
     weights[i +  0] =  -1;
@@ -918,7 +918,7 @@ TYPED_TEST(CuDNNConvolutionLayerTest, TestSobelConvolutionCuDNN) {
   layer.reset(new CuDNNConvolutionLayer<Dtype,Mtype>(layer_param));
   layer->blobs().resize(1);
   layer->blobs()[0].reset(new Blob<Dtype>(1, 3, 3, 1));
-  Dtype* weights_1 = layer->blobs()[0]->mutable_cpu_data();
+  Dtype* weights_1 = layer->blobs()[0]->template mutable_cpu_data_base<Dtype>();
   for (int c = 0; c < 3; ++c) {
     int i = c * 3;  // 3 x 1 filter
     weights_1[i +  0] = 1;
@@ -940,7 +940,7 @@ TYPED_TEST(CuDNNConvolutionLayerTest, TestSobelConvolutionCuDNN) {
   layer.reset(new CuDNNConvolutionLayer<Dtype,Mtype>(layer_param));
   layer->blobs().resize(1);
   layer->blobs()[0].reset(new Blob<Dtype>(1, 1, 1, 3));
-  Dtype* weights_2 = layer->blobs()[0]->mutable_cpu_data();
+  Dtype* weights_2 = layer->blobs()[0]->template mutable_cpu_data_base<Dtype>();
   weights_2[0] = -1;
   weights_2[1] = 0;
   weights_2[2] = 1;

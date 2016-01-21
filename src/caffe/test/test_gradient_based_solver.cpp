@@ -237,16 +237,16 @@ class GradientBasedSolverTest : public MultiDeviceTest<TypeParam> {
     vector<Blob<Dtype>*> empty_bottom_vec;
     net.Forward(empty_bottom_vec);
     ASSERT_TRUE(net.has_blob("data"));
-    const Blob<Dtype>& data = *net.blob_by_name("data");
+    const BlobBase& data = *net.blob_by_name("data");
     ASSERT_TRUE(net.has_blob("targets"));
-    const Blob<Dtype>& targets = *net.blob_by_name("targets");
+    const BlobBase& targets = *net.blob_by_name("targets");
     ASSERT_TRUE(net.has_layer("innerprod"));
-    const vector<shared_ptr<Blob<Dtype> > >& param_blobs =
+    const vector<shared_ptr<BlobBase> >& param_blobs =
         net.layer_by_name("innerprod")->blobs();
     const int num_param_blobs = 2;
     ASSERT_EQ(num_param_blobs, param_blobs.size());
-    const Blob<Dtype>& weights = *param_blobs[0];
-    const Blob<Dtype>& bias = *param_blobs[1];
+    const BlobBase& weights = *param_blobs[0];
+    const BlobBase& bias = *param_blobs[1];
     ASSERT_EQ(D * N, data.count());
     ASSERT_EQ(N, targets.count());
     ASSERT_EQ(D, weights.count());
@@ -271,25 +271,25 @@ class GradientBasedSolverTest : public MultiDeviceTest<TypeParam> {
         Mtype element = 0;
         for (int k = 0; k < N; ++k) {
           // (i, k) in X^T (== (k, i) in X) times (k, j) in X.
-          const Mtype element_i = (i == D) ? Dtype(1.) : data.cpu_data()[k * D + i];
-          const Mtype element_j = (j == D) ? Dtype(1.) : data.cpu_data()[k * D + j];
+          const Mtype element_i = (i == D) ? Dtype(1.) : data.cpu_data_base<Dtype>()[k * D + i];
+          const Mtype element_j = (j == D) ? Dtype(1.) : data.cpu_data_base<Dtype>()[k * D + j];
           element += element_i * element_j;
         }
         if (j == D) {
-          grad += element * bias.cpu_data()[0];
+          grad += element * bias.cpu_data_base<Dtype>()[0];
         } else {
-          grad += element * weights.cpu_data()[j];
+          grad += element * weights.cpu_data_base<Dtype>()[j];
         }
       }
       for (int k = 0; k < N; ++k) {
-        const Mtype element_i = (i == D) ? Dtype(1.) : data.cpu_data()[k * D + i];
-        grad -= element_i * targets.cpu_data()[k];
+        const Mtype element_i = (i == D) ? Dtype(1.) : data.cpu_data_base<Dtype>()[k * D + i];
+        grad -= element_i * targets.cpu_data_base<Dtype>()[k];
       }
       // Scale the gradient over the N samples.
       grad /= N;
       // Add the weight decay to the gradient.
       grad += weight_decay *
-          ((i == D) ? bias.cpu_data()[0] : weights.cpu_data()[i]);
+          ((i == D) ? bias.cpu_data_base<Dtype>()[0] : weights.cpu_data_base<Dtype>()[i]);
       // Finally, compute update.
       const vector<shared_ptr<Blob<Dtype> > >& history = solver_->history();
       if (solver_type() != SolverParameter_SolverType_ADADELTA
@@ -353,10 +353,10 @@ class GradientBasedSolverTest : public MultiDeviceTest<TypeParam> {
       }
       if (i == D) {
         updated_bias.mutable_cpu_diff()[0] = update_value;
-        updated_bias.mutable_cpu_data()[0] = bias.cpu_data()[0] - update_value;
+        updated_bias.mutable_cpu_data()[0] = bias.cpu_data_base<Dtype>()[0] - update_value;
       } else {
         updated_weights.mutable_cpu_diff()[i] = update_value;
-        updated_weights.mutable_cpu_data()[i] = weights.cpu_data()[i] - update_value;
+        updated_weights.mutable_cpu_data()[i] = weights.cpu_data_base<Dtype>()[i] - update_value;
       }
     }
   }
@@ -370,24 +370,24 @@ class GradientBasedSolverTest : public MultiDeviceTest<TypeParam> {
 
     Net<Dtype,Mtype>& net = *this->solver_->net();
     ASSERT_TRUE(net.has_layer("innerprod"));
-    const vector<shared_ptr<Blob<Dtype> > >& param_blobs =
+    const vector<shared_ptr<BlobBase> >& param_blobs =
         net.layer_by_name("innerprod")->blobs();
     ASSERT_EQ(2, param_blobs.size());
-    const Blob<Dtype>& solver_updated_weights = *param_blobs[0];
+    const BlobBase& solver_updated_weights = *param_blobs[0];
     ASSERT_EQ(D, solver_updated_weights.count());
     const double kPrecision = 5.e-1;
     const double kMinPrecision = 1e-7;
     for (int i = 0; i < D; ++i) {
       const Mtype expected_updated_weight = updated_weights.cpu_data()[i];
-      const Mtype solver_updated_weight = solver_updated_weights.cpu_data()[i];
+      const Mtype solver_updated_weight = solver_updated_weights.cpu_data_base<Dtype>()[i];
       const Mtype error_margin = std::max(kMinPrecision, kPrecision *
           std::min(fabs(expected_updated_weight), fabs(solver_updated_weight)));
       EXPECT_NEAR(expected_updated_weight, solver_updated_weight, tol<Dtype>(error_margin));
     }
-    const Blob<Dtype>& solver_updated_bias_blob = *param_blobs[1];
+    const BlobBase& solver_updated_bias_blob = *param_blobs[1];
     ASSERT_EQ(1, solver_updated_bias_blob.count());
     const Mtype expected_updated_bias = updated_bias.cpu_data()[0];
-    const Mtype solver_updated_bias = solver_updated_bias_blob.cpu_data()[0];
+    const Mtype solver_updated_bias = solver_updated_bias_blob.cpu_data_base<Dtype>()[0];
     const Mtype error_margin = std::max(kMinPrecision, kPrecision *
           std::min(fabs(expected_updated_bias), fabs(solver_updated_bias)));
     EXPECT_NEAR(expected_updated_bias, solver_updated_bias, tol<Dtype>(error_margin));
@@ -421,7 +421,7 @@ class GradientBasedSolverTest : public MultiDeviceTest<TypeParam> {
         kNumIters);
     // Save parameters for comparison.
     Net<Dtype,Mtype>& net = *this->solver_->net();
-    const vector<shared_ptr<Blob<Dtype> > >& param_blobs =
+    const vector<shared_ptr<BlobBase> >& param_blobs =
         net.layer_by_name("innerprod")->blobs();
     vector<shared_ptr<Blob<Dtype> > > noaccum_params(param_blobs.size());
     for (int i = 0; i < param_blobs.size(); ++i) {
@@ -432,20 +432,20 @@ class GradientBasedSolverTest : public MultiDeviceTest<TypeParam> {
     this->RunLeastSquaresSolver(kLearningRate, kWeightDecay, kMomentum,
         kNumIters, kIterSize);
     Net<Dtype,Mtype>& net_accum = *this->solver_->net();
-    const vector<shared_ptr<Blob<Dtype> > >& accum_params =
+    const vector<shared_ptr<BlobBase> >& accum_params =
         net_accum.layer_by_name("innerprod")->blobs();
     // Compare accumulated parameters against no accumulation standard.
     const int D = this->channels_ * this->height_ * this->width_;
     for (int i = 0; i < D; ++i) {
       const float expected_param = noaccum_params[0]->cpu_data()[i];
-      const float accum_param = accum_params[0]->cpu_data()[i];
+      const float accum_param = accum_params[0]->cpu_data_base<Dtype>()[i];
       const float error_margin = std::max(kMinPrecision, kPrecision *
           std::min(fabs(expected_param), fabs(accum_param)));
       EXPECT_NEAR(expected_param, accum_param, tol<Dtype>(error_margin));
     }
     ASSERT_EQ(1, accum_params[1]->count());
     const float expected_bias = noaccum_params[1]->cpu_data()[0];
-    const float accum_bias = accum_params[1]->cpu_data()[0];
+    const float accum_bias = accum_params[1]->cpu_data_base<Dtype>()[0];
     const float error_margin = std::max(kMinPrecision, kPrecision *
         std::min(fabs(expected_bias), fabs(accum_bias)));
     EXPECT_NEAR(expected_bias, accum_bias, error_margin);
@@ -519,7 +519,7 @@ class GradientBasedSolverTest : public MultiDeviceTest<TypeParam> {
 
     // Save the resulting param values.
     vector<shared_ptr<Blob<Dtype> > > param_copies;
-    const vector<Blob<Dtype>*>& orig_params =
+    const vector<BlobBase*>& orig_params =
         solver_->net()->learnable_params();
     param_copies.resize(orig_params.size());
     for (int i = 0; i < orig_params.size(); ++i) {
@@ -554,13 +554,13 @@ class GradientBasedSolverTest : public MultiDeviceTest<TypeParam> {
         snapshot, snapshot_name.c_str());
 
     // Check that params now match.
-    const vector<Blob<Dtype>*>& params = solver_->net()->learnable_params();
+    const vector<BlobBase*>& params = solver_->net()->learnable_params();
     for (int i = 0; i < params.size(); ++i) {
       for (int j = 0; j < params[i]->count(); ++j) {
-        EXPECT_NEAR(param_copies[i]->cpu_data()[j], params[i]->cpu_data()[j],
+        EXPECT_NEAR(param_copies[i]->cpu_data()[j], params[i]->cpu_data_base<Dtype>()[j],
             choose<Dtype>(1.e-5,1.e-4))
             << "param " << i << " data differed at dim " << j;
-        EXPECT_NEAR(param_copies[i]->cpu_diff()[j], params[i]->cpu_diff()[j],
+        EXPECT_NEAR(param_copies[i]->cpu_diff()[j], params[i]->cpu_diff_base<Dtype>()[j],
             choose<Dtype>(1.e-5,1.e-4))
             << "param " << i << " diff differed at dim " << j;
       }

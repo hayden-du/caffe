@@ -100,7 +100,8 @@ TYPED_TEST(MemoryDataLayerTest, TestForward) {
   md_param->set_width(this->width_);
   shared_ptr<MemoryDataLayer<Dtype,Mtype> > layer(
       new MemoryDataLayer<Dtype,Mtype>(layer_param));
-  layer->DataLayerSetUp(this->blob_bottom_vec_, this->blob_top_vec_);
+  layer->DataLayerSetUp(blob_base_vector(this->blob_bottom_vec_),
+      blob_base_vector(this->blob_top_vec_));
   layer->Reset(this->data_->mutable_cpu_data(),
       this->labels_->mutable_cpu_data(), this->data_->num());
   for (int i = 0; i < this->batches_ * 6; ++i) {

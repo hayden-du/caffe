@@ -200,7 +200,8 @@ TYPED_TEST(CuDNNBatchNormLayerTest, TestForward) {
 
   CuDNNBatchNormLayer<Dtype,Mtype> layer(layer_param);
   layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
-  layer.Reshape(this->blob_bottom_vec_, this->blob_top_vec_);
+  layer.Reshape(blob_base_vector(this->blob_bottom_vec_),
+      blob_base_vector(this->blob_top_vec_));
   layer.Forward(this->blob_bottom_vec_, this->blob_top_vec_);
 
   // Test mean

@@ -264,7 +264,8 @@ TYPED_TEST(ReshapeLayerTest, TestForwardAfterReshape) {
   // Reshape the bottom and call layer.Reshape, then try again.
   vector<int> new_bottom_shape(1, 2 * 3 * 6 * 5);
   this->blob_bottom_->Reshape(new_bottom_shape);
-  layer.Reshape(this->blob_bottom_vec_, this->blob_top_vec_);
+  layer.Reshape(blob_base_vector(this->blob_bottom_vec_),
+      blob_base_vector(this->blob_top_vec_));
   FillerParameter filler_param;
   GaussianFiller<Dtype,Mtype> filler(filler_param);
   filler.Fill(this->blob_bottom_);

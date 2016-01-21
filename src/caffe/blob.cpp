@@ -611,4 +611,20 @@ INSTANTIATE_CLASS1(Blob);
 template class Blob<int>;
 template class Blob<unsigned int>;
 
+template <typename Dtype>
+vector<BlobBase*> blob_base_vector(const vector<Blob<Dtype>*>& vb) {
+  vector<BlobBase*> ret(vb.size());
+  for(int i = 0; i < vb.size(); ++i) {
+    ret[i] = vb[i];
+  }
+  return ret; // we assume move semantics here
+}
+
+template
+vector<BlobBase*> blob_base_vector(const vector<Blob<float>*>& vb);
+template
+vector<BlobBase*> blob_base_vector(const vector<Blob<double>*>& vb);
+template
+vector<BlobBase*> blob_base_vector(const vector<Blob<float16>*>& vb);
+
 }  // namespace caffe

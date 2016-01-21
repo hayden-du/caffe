@@ -396,6 +396,9 @@ public:
   DISABLE_COPY_AND_ASSIGN(Blob);
 };
 
+template <typename Dtype>
+vector<BlobBase*> blob_base_vector(const vector<Blob<Dtype>*>& vb);
+
 }  // namespace caffe
 
 #endif  // CAFFE_BLOB_HPP_
