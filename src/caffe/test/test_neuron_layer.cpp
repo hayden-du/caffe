@@ -108,7 +108,7 @@ class NeuronLayerTest : public MultiDeviceTest<TypeParam> {
   // Now, check values
     const Dtype* bottom_data = this->blob_bottom_->cpu_data();
     const Dtype* top_data = this->blob_top_->cpu_data();
-    const Dtype* slope_data = layer->blobs()[0]->cpu_data();
+    const Dtype* slope_data = layer->blobs()[0]->template cpu_data_base<Dtype>();
     int hw = this->blob_bottom_->height() * this->blob_bottom_->width();
     int channels = this->blob_bottom_->channels();
     bool channel_shared = layer->layer_param().prelu_param().channel_shared();
@@ -552,7 +552,7 @@ TYPED_TEST(NeuronLayerTest, TestPReLUParam) {
   LayerParameter layer_param;
   PReLULayer<Dtype,Mtype> layer(layer_param);
   layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
-  const Dtype* slopes = layer.blobs()[0]->cpu_data();
+  const Dtype* slopes = layer.blobs()[0]->template cpu_data_base<Dtype>();
   int count = layer.blobs()[0]->count();
   for (int i = 0; i < count; ++i, ++slopes) {
     EXPECT_EQ(*slopes, 0.25);
@@ -681,8 +681,8 @@ TYPED_TEST(NeuronLayerTest, TestPReLUInPlace) {
   prelu.SetUp(this->blob_top_vec_, this->blob_top_vec_);
   ip2.SetUp(blob_bottom_vec_2, blob_middle_vec_2);
   prelu2.SetUp(blob_middle_vec_2, blob_top_vec_2);
-  caffe_copy(ip2.blobs()[0]->count(), ip.blobs()[0]->cpu_data(),
-      ip2.blobs()[0]->mutable_cpu_data());
+  caffe_copy(ip2.blobs()[0]->count(), ip.blobs()[0]->template cpu_data_base<Dtype>(),
+      ip2.blobs()[0]->template mutable_cpu_data_base<Dtype>());
   // Forward in-place
   ip.Forward(this->blob_bottom_vec_, this->blob_top_vec_);
   prelu.Forward(this->blob_top_vec_, this->blob_top_vec_);
@@ -716,14 +716,16 @@ TYPED_TEST(NeuronLayerTest, TestPReLUInPlace) {
     EXPECT_EQ(this->blob_bottom_->cpu_diff()[s], blob_bottom_2->cpu_diff()[s]);
   }
   for (int s = 0; s < ip.blobs()[0]->count(); ++s) {
-    EXPECT_EQ(ip.blobs()[0]->cpu_diff()[s], ip2.blobs()[0]->cpu_diff()[s]);
+    EXPECT_EQ(ip.blobs()[0]->template cpu_diff_base<Dtype>()[s],
+        ip2.blobs()[0]->template cpu_diff_base<Dtype>()[s]);
   }
   for (int s = 0; s < ip.blobs()[1]->count(); ++s) {
-    EXPECT_EQ(ip.blobs()[1]->cpu_diff()[s], ip2.blobs()[1]->cpu_diff()[s]);
+    EXPECT_EQ(ip.blobs()[1]->template cpu_diff_base<Dtype>()[s],
+        ip2.blobs()[1]->template cpu_diff_base<Dtype>()[s]);
   }
   for (int s = 0; s < prelu.blobs()[0]->count(); ++s) {
-    EXPECT_EQ(prelu.blobs()[0]->cpu_diff()[s],
-        prelu2.blobs()[0]->cpu_diff()[s]);
+    EXPECT_EQ(prelu.blobs()[0]->template cpu_diff_base<Dtype>()[s],
+        prelu2.blobs()[0]->template cpu_diff_base<Dtype>()[s]);
   }
 }
 

@@ -292,7 +292,7 @@ TYPED_TEST(BlobMathTest, TestScaleData) {
     LOG(FATAL) << "Unknown device: " << TypeParam::device;
   }
   const Mtype kDataScaleFactor = 3;
-  this->blob_->scale_data(kDataScaleFactor);
+  this->blob_->template scale_data<Dtype,Mtype>(kDataScaleFactor);
   asum = this->blob_->template asum_data<Dtype,Mtype>();
   EXPECT_NEAR(asum_before_scale * kDataScaleFactor, asum,
               tol<Dtype>(this->epsilon_) * asum_before_scale * kDataScaleFactor);
@@ -324,7 +324,7 @@ TYPED_TEST(BlobMathTest, TestScaleData) {
     LOG(FATAL) << "Unknown device: " << TypeParam::device;
   }
   const Mtype kDiffScaleFactor = 3;
-  this->blob_->scale_diff(kDiffScaleFactor);
+  this->blob_->template scale_diff<Dtype,Mtype>(kDiffScaleFactor);
   asum = this->blob_->template asum_data<Dtype,Mtype>();
   EXPECT_NEAR(asum_before_scale * kDataScaleFactor, asum,
       tol<Dtype>(this->epsilon_) * asum_before_scale * kDataScaleFactor);

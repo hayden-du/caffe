@@ -581,7 +581,7 @@ void SGDSolver<Dtype,Mtype>::ClipGradients() {
         << l2norm_diff << " > " << clip_gradients << ") "
         << "by scale factor " << scale_factor;
     for (int i = 0; i < net_params.size(); ++i) {
-      net_params[i]->scale_diff<Dtype>(scale_factor);
+      net_params[i]->scale_diff<Dtype,Mtype>(scale_factor);
     }
   }
 }

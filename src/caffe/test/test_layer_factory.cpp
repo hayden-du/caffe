@@ -20,12 +20,10 @@ class LayerFactoryTest : public MultiDeviceTest<TypeParam> {};
 TYPED_TEST_CASE(LayerFactoryTest, TestDtypesAndDevices);
 
 TYPED_TEST(LayerFactoryTest, TestCreateLayer) {
-  typedef typename TypeParam::Dtype Dtype;
-  typedef typename TypeParam::Mtype Mtype;
-  typename LayerRegistry<Dtype,Mtype>::CreatorRegistry& registry =
-      LayerRegistry<Dtype,Mtype>::Registry();
-  shared_ptr<Layer<Dtype,Mtype> > layer;
-  for (typename LayerRegistry<Dtype,Mtype>::CreatorRegistry::iterator iter =
+  typename LayerRegistry::CreatorRegistry& registry =
+      LayerRegistry::Registry();
+  shared_ptr<LayerBase> layer;
+  for (typename LayerRegistry::CreatorRegistry::iterator iter =
        registry.begin(); iter != registry.end(); ++iter) {
     // Special case: PythonLayer is checked by pytest
     if (iter->first == "Python") { continue; }
@@ -44,7 +42,7 @@ TYPED_TEST(LayerFactoryTest, TestCreateLayer) {
 #endif  // USE_LEVELDB
     }
     layer_param.set_type(iter->first);
-    layer = LayerRegistry<Dtype,Mtype>::CreateLayer(layer_param);
+    layer = LayerRegistry::CreateLayer(layer_param);
     EXPECT_EQ(iter->first, layer->type());
   }
 }
