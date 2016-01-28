@@ -63,8 +63,9 @@ public:
   }
 
   template <typename DT, typename DB>
-  void SetUp(const vector<Blob<DB>*>& bottom, const vector<Blob<DT>*>& top) {} //FIXME
-
+  void SetUp(const vector<Blob<DB>*>& bottom, const vector<Blob<DT>*>& top) {
+    SetUp(blob_base_vector(bottom), blob_base_vector(top));
+  }
 
   /**
    * @brief Adjust the shapes of top blobs and internal buffers to accommodate
@@ -80,6 +81,12 @@ public:
    */
   virtual void Reshape(const vector<BlobBase*>& bottom,
       const vector<BlobBase*>& top) = 0;
+
+//    template <typename DT, typename DB>
+//    void Reshape(const vector<Blob<DB>*>& bottom,
+//        const vector<Blob<DT>*>& top) {
+//      Reshape(blob_base_vector(bottom), blob_base_vector(top));
+//    }
 
   /**
    * @brief Whether a layer should be shared by multiple nets during data
@@ -418,15 +425,18 @@ class Layer: public LayerBase {
       const vector<bool>& propagate_down,
       const vector<BlobBase*>& bottom);
 
-
   template <typename DT, typename DB>
   float Forward(const vector<Blob<DB>*>& bottom,
-      const vector<Blob<DT>*>& top) {return 0.F;} //FIXME
+      const vector<Blob<DT>*>& top) {
+    return Forward(blob_base_vector(bottom), blob_base_vector(top));
+  }
 
   template <typename DT, typename DB>
   void Backward(const vector<Blob<DT>*>& top,
       const vector<bool>& propagate_down,
-      const vector<Blob<DB>*>& bottom) {} //FIXME
+      const vector<Blob<DB>*>& bottom) {
+    Backward(blob_base_vector(top), propagate_down, blob_base_vector(bottom));
+  }
 
   virtual void ToProto(LayerParameter* param, bool write_diff = false);
 

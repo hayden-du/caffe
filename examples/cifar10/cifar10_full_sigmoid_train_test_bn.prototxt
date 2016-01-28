@@ -12,7 +12,7 @@ layer {
   }
   data_param {
     source: "examples/cifar10/cifar10_train_lmdb"
-    batch_size: 100
+    batch_size: 128
     backend: LMDB
   }
 }
@@ -71,13 +71,13 @@ layer {
   bottom: "pool1"
   top: "bn1"
   param {
-    lr_mult: 0
+    lr_mult: 1
   }
   param {
-    lr_mult: 0
+    lr_mult: 1
   }
   param {
-    lr_mult: 0
+    lr_mult: 1
   }
 }
 
@@ -115,13 +115,13 @@ layer {
   bottom: "conv2"
   top: "bn2"
   param {
-    lr_mult: 0
+    lr_mult: 1
   }
   param {
-    lr_mult: 0
+    lr_mult: 1
   }
   param {
-    lr_mult: 0
+    lr_mult: 1
   }
 }
 
@@ -169,13 +169,13 @@ layer {
   bottom: "conv3"
   top: "bn3"
   param {
-    lr_mult: 0
+    lr_mult: 1
   }
   param {
-    lr_mult: 0
+    lr_mult: 1
   }
   param {
-    lr_mult: 0
+    lr_mult: 1
   }
 }
 

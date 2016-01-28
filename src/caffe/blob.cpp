@@ -381,8 +381,41 @@ bool BlobBase::ShapeEquals(const BlobProto& other) {
   return shape_ == other_shape;
 }
 
-template <typename Dtype>
-void Blob<Dtype>::CopyFrom(const Blob& source, bool copy_diff, bool reshape) {
+//template <typename Dtype>
+//void Blob<Dtype>::CopyFrom(const Blob& source, bool copy_diff, bool reshape) {
+//  if (source.count() != count_ || source.shape() != shape_) {
+//    if (reshape) {
+//      ReshapeLike(source);
+//    } else {
+//      LOG(FATAL) << "Trying to copy blobs of different sizes.";
+//    }
+//  }
+//  switch (Caffe::mode()) {
+//  case Caffe::GPU:
+//    if (copy_diff) {
+//      caffe_copy(count_, source.gpu_diff(),
+//          static_cast<Dtype*>(diff_->mutable_gpu_data()));
+//    } else {
+//      caffe_copy(count_, source.gpu_data(),
+//          static_cast<Dtype*>(data_->mutable_gpu_data()));
+//    }
+//    break;
+//  case Caffe::CPU:
+//    if (copy_diff) {
+//      caffe_copy(count_, source.cpu_diff(),
+//          static_cast<Dtype*>(diff_->mutable_cpu_data()));
+//    } else {
+//      caffe_copy(count_, source.cpu_data(),
+//          static_cast<Dtype*>(data_->mutable_cpu_data()));
+//    }
+//    break;
+//  default:
+//    LOG(FATAL) << "Unknown caffe mode.";
+//  }
+//}
+
+void BlobBase::CopyFrom(const BlobBase& source, bool copy_diff, bool reshape)
+{
   if (source.count() != count_ || source.shape() != shape_) {
     if (reshape) {
       ReshapeLike(source);
@@ -413,6 +446,10 @@ void Blob<Dtype>::CopyFrom(const Blob& source, bool copy_diff, bool reshape) {
     LOG(FATAL) << "Unknown caffe mode.";
   }
 }
+
+
+
+
 
 template <typename Dtype>
 void Blob<Dtype>::FromProto(const BlobProto& proto, bool reshape) {

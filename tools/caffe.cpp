@@ -18,9 +18,11 @@ namespace bp = boost::python;
 
 
 using caffe::Blob;
+using caffe::BlobBase;
 using caffe::Caffe;
 using caffe::Net;
 using caffe::Layer;
+using caffe::LayerBase;
 using caffe::Solver;
 using caffe::shared_ptr;
 using caffe::string;
@@ -327,12 +329,9 @@ int time() {
   LOG(INFO) << "Performing Backward";
   caffe_net.Backward();
 
-//  const vector<shared_ptr<Layer<float,float> > >& layers = caffe_net.layers();
-  const vector<shared_ptr<Layer<float,float> > > layers; // FIXME = caffe_net.layers();
-//  const vector<vector<Blob<float>*> >& bottom_vecs = caffe_net.bottom_vecs();
-  const vector<vector<Blob<float>*> > bottom_vecs; // FIXME = caffe_net.bottom_vecs();
-//  const vector<vector<Blob<float>*> >& top_vecs = caffe_net.top_vecs();
-  const vector<vector<Blob<float>*> > top_vecs; // FIXME = caffe_net.top_vecs();
+  const vector<shared_ptr<LayerBase> > layers = caffe_net.layers();
+  const vector<vector<BlobBase*> > bottom_vecs = caffe_net.bottom_vecs();
+  const vector<vector<BlobBase*> > top_vecs = caffe_net.top_vecs();
   const vector<vector<bool> >& bottom_need_backward =  caffe_net.bottom_need_backward();
 
   LOG(INFO) << "*** Benchmark begins ***";
