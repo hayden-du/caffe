@@ -73,11 +73,15 @@ layer {
   param {
     lr_mult: 1
   }
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 1
+  batch_norm_param {
+    scale_filler {
+      type: "constant"
+      value: 1
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
   }
 }
 
@@ -117,11 +121,15 @@ layer {
   param {
     lr_mult: 1
   }
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 1
+  batch_norm_param {
+    scale_filler {
+      type: "constant"
+      value: 1
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
   }
 }
 
@@ -171,11 +179,15 @@ layer {
   param {
     lr_mult: 1
   }
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 1
+  batch_norm_param {
+    scale_filler {
+      type: "constant"
+      value: 1
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
   }
 }
 

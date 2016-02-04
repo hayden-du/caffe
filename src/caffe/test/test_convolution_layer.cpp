@@ -256,7 +256,7 @@ TYPED_TEST(ConvolutionLayerTest, TestSimpleConvolution) {
   top_data = this->blob_top_2_->cpu_data();
   ref_top_data = this->ref_blob_top_->cpu_data();
   for (int i = 0; i < this->blob_top_->count(); ++i) {
-    EXPECT_NEAR(top_data[i], ref_top_data[i], choose<Dtype>(1e-4,1e-2));
+    EXPECT_NEAR(top_data[i], ref_top_data[i], choose<Dtype>(1e-4,2e-2));
   }
 }
 
