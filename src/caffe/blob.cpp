@@ -86,18 +86,16 @@ void BlobBase::Reshape(const BlobShape& shape) {
   Reshape(shape_vec);
 }
 
-BlobBase::BlobBase(const int num, const int channels, const int height,
-    const int width)
-  // capacity_ must be initialized before calling Reshape
-  : capacity_(0) {
-  Reshape(num, channels, height, width);
-}
-
-BlobBase::BlobBase(const vector<int>& shape)
-  // capacity_ must be initialized before calling Reshape
-  : capacity_(0) {
-  Reshape(shape);
-}
+//BlobBase::BlobBase(const int num, const int channels, const int height,
+//    const int width)
+//  // capacity_ must be initialized before calling Reshape
+//  : capacity_(0) {
+//}
+//
+//BlobBase::BlobBase(const vector<int>& shape)
+//  // capacity_ must be initialized before calling Reshape
+//  : capacity_(0) {
+//}
 
 const int* BlobBase::gpu_shape() const {
   CHECK(shape_data_);
@@ -381,38 +379,54 @@ bool BlobBase::ShapeEquals(const BlobProto& other) {
   return shape_ == other_shape;
 }
 
-//template <typename Dtype>
-//void Blob<Dtype>::CopyFrom(const Blob& source, bool copy_diff, bool reshape) {
-//  if (source.count() != count_ || source.shape() != shape_) {
-//    if (reshape) {
-//      ReshapeLike(source);
-//    } else {
-//      LOG(FATAL) << "Trying to copy blobs of different sizes.";
-//    }
-//  }
-//  switch (Caffe::mode()) {
-//  case Caffe::GPU:
-//    if (copy_diff) {
-//      caffe_copy(count_, source.gpu_diff(),
-//          static_cast<Dtype*>(diff_->mutable_gpu_data()));
-//    } else {
-//      caffe_copy(count_, source.gpu_data(),
-//          static_cast<Dtype*>(data_->mutable_gpu_data()));
-//    }
-//    break;
-//  case Caffe::CPU:
-//    if (copy_diff) {
-//      caffe_copy(count_, source.cpu_diff(),
-//          static_cast<Dtype*>(diff_->mutable_cpu_data()));
-//    } else {
-//      caffe_copy(count_, source.cpu_data(),
-//          static_cast<Dtype*>(data_->mutable_cpu_data()));
-//    }
-//    break;
-//  default:
-//    LOG(FATAL) << "Unknown caffe mode.";
-//  }
-//}
+
+//FIXME
+static void copy_helper(int count, const void* p_src, std::size_t sz_src,
+    void* p_dst, std::size_t sz_dst)
+{
+  if (sz_src == sizeof(float)) {
+    if (sz_dst == sizeof(float)) {
+      caffe_copy(count,
+          static_cast<const float*>(p_src), static_cast<float*>(p_dst));
+    } else if (sz_dst == sizeof(float16)) {
+LOG(FATAL) << "^^^^^^^^^^^^^^^^^^^^^^^^^";
+
+    } else if (sz_dst == sizeof(double)) {
+LOG(FATAL) << "^^^^^^^^^^^^^^^^^^^^^^^^^";
+
+    } else {
+      LOG(FATAL) << "Unknown type, size=" << sz_dst;
+    }
+  } else if (sz_src == sizeof(float16)) {
+    if (sz_dst == sizeof(float)) {
+LOG(FATAL) << "^^^^^^^^^^^^^^^^^^^^^^^^^";
+
+    } else if (sz_dst == sizeof(float16)) {
+      caffe_copy(count,
+          static_cast<const float16*>(p_src), static_cast<float16*>(p_dst));
+    } else if (sz_dst == sizeof(double)) {
+LOG(FATAL) << "^^^^^^^^^^^^^^^^^^^^^^^^^";
+
+    } else {
+      LOG(FATAL) << "Unknown type, size=" << sz_dst;
+    }
+  } else if (sz_src == sizeof(double)) {
+    if (sz_dst == sizeof(float)) {
+LOG(FATAL) << "^^^^^^^^^^^^^^^^^^^^^^^^^";
+
+    } else if (sz_dst == sizeof(float16)) {
+LOG(FATAL) << "^^^^^^^^^^^^^^^^^^^^^^^^^";
+
+    } else if (sz_dst == sizeof(double)) {
+      caffe_copy(count,
+          static_cast<const double*>(p_src), static_cast<double*>(p_dst));
+    } else {
+      LOG(FATAL) << "Unknown type, size=" << sz_dst;
+    }
+  } else {
+    LOG(FATAL) << "Unknown type, size=" << sz_src;
+  }
+}
 
 void BlobBase::CopyFrom(const BlobBase& source, bool copy_diff, bool reshape)
 {
@@ -426,30 +440,26 @@ void BlobBase::CopyFrom(const BlobBase& source, bool copy_diff, bool reshape)
   switch (Caffe::mode()) {
   case Caffe::GPU:
     if (copy_diff) {
-      caffe_copy(count_, source.gpu_diff(),
-          static_cast<Dtype*>(diff_->mutable_gpu_data()));
+      copy_helper(count_, source.diff_->gpu_data(), source.dtsize(),
+          diff_->mutable_gpu_data(), this->dtsize());
     } else {
-      caffe_copy(count_, source.gpu_data(),
-          static_cast<Dtype*>(data_->mutable_gpu_data()));
+      copy_helper(count_, source.data_->gpu_data(), source.dtsize(),
+          data_->mutable_gpu_data(), this->dtsize());
     }
     break;
   case Caffe::CPU:
     if (copy_diff) {
-      caffe_copy(count_, source.cpu_diff(),
-          static_cast<Dtype*>(diff_->mutable_cpu_data()));
+      copy_helper(count_, source.diff_->cpu_data(), source.dtsize(),
+          diff_->mutable_cpu_data(), this->dtsize());
     } else {
-      caffe_copy(count_, source.cpu_data(),
-          static_cast<Dtype*>(data_->mutable_cpu_data()));
+      copy_helper(count_, source.data_->cpu_data(), source.dtsize(),
+          data_->mutable_cpu_data(), this->dtsize());
     }
     break;
   default:
     LOG(FATAL) << "Unknown caffe mode.";
   }
 }
-
-
-
-
 
 template <typename Dtype>
 void Blob<Dtype>::FromProto(const BlobProto& proto, bool reshape) {

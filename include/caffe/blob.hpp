@@ -27,11 +27,9 @@ class BlobBase {
  public:
   BlobBase()
        : data_(), diff_(), count_(0), capacity_(0) {}
-
-  /// @brief Deprecated; use <code>Blob(const vector<int>& shape)</code>.
-  BlobBase(const int num, const int channels, const int height,
-      const int width);
-  explicit BlobBase(const vector<int>& shape);
+//  BlobBase(const int num, const int channels, const int height,
+//      const int width);
+//  explicit BlobBase(const vector<int>& shape);
 
   virtual ~BlobBase() {}
   virtual std::size_t dtsize() const = 0;
@@ -60,8 +58,17 @@ class BlobBase {
     Reshape(other.shape());
   }
 
+  /**
+   * @brief Copy from a source Blob.
+   *
+   * @param source the Blob to copy from
+   * @param copy_diff if false, copy the data; if true, copy the diff
+   * @param reshape if false, require this Blob to be pre-shaped to the shape
+   *        of other (and die otherwise); if true, Reshape this Blob to other's
+   *        shape if necessary
+   */
   void CopyFrom(const BlobBase& source, bool copy_diff = false,
-      bool reshape = false);// {} // FIXME
+      bool reshape = false);
 
   inline string shape_string() const {
     ostringstream stream;
@@ -335,10 +342,19 @@ class Blob : public BlobBase {
 public:
   Blob()
     : BlobBase() {}
+
+  /// @brief Deprecated; use <code>Blob(const vector<int>& shape)</code>.
   Blob(const int num, const int channels, const int height, const int width)
-    : BlobBase(num, channels, height, width) {}
+    // capacity_ must be initialized before calling Reshape
+    : BlobBase() {
+    Reshape(num, channels, height, width);
+  }
+
   explicit Blob(const vector<int>& shape)
-    : BlobBase(shape) {}
+    // capacity_ must be initialized before calling Reshape
+    : BlobBase() {
+    Reshape(shape);
+  }
 
   const Dtype* cpu_data() const;
   const Dtype* gpu_data() const;
@@ -350,25 +366,6 @@ public:
   Dtype* mutable_gpu_diff();
 
   virtual std::size_t dtsize() const { return sizeof(Dtype); }
-
-  /**
-   * @brief Copy from a source Blob.
-   *
-   * @param source the Blob to copy from
-   * @param copy_diff if false, copy the data; if true, copy the diff
-   * @param reshape if false, require this Blob to be pre-shaped to the shape
-   *        of other (and die otherwise); if true, Reshape this Blob to other's
-   *        shape if necessary
-   */
-//  void CopyFrom(const Blob<Dtype>& source, bool copy_diff = false,
-//      bool reshape = false);
-//
-//
-//  void CopyFrom(const BlobBase& source, bool copy_diff = false,
-//      bool reshape = false) {
-//    BlobBase::CopyFrom(source, copy_diff, reshape);
-//  } // FIXME
-
 
   inline Dtype data_at(const int n, const int c, const int h,
       const int w) const {

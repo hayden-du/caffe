@@ -491,7 +491,7 @@ class Layer: public LayerBase {
         if (loss_weight == 0.F) { continue; }
         this->set_loss(top_id, loss_weight);
         const int count = top[top_id]->count();
-        Dtype* loss_multiplier = top[top_id]->mutable_cpu_data_base<Dtype>();
+        Dtype* loss_multiplier = top[top_id]->mutable_cpu_diff_base<Dtype>();
         caffe_set(count, loss_weight, loss_multiplier);
       }
     }
