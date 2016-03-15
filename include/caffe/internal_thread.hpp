@@ -18,7 +18,7 @@ namespace caffe {
  */
 class InternalThread {
  public:
-  InternalThread();
+  InternalThread() : thread_() {}
   virtual ~InternalThread();
 
   /**
@@ -42,14 +42,10 @@ class InternalThread {
   bool must_stop();
 
  private:
-  void entry();
+  void entry(int device, Caffe::Brew mode, int rand_seed, int solver_count,
+      bool root_solver);
 
   shared_ptr<boost::thread> thread_;
-  int device_;
-  Caffe::Brew mode_;
-  int rand_seed_;
-  int solver_count_;
-  bool root_solver_;
 };
 
 }  // namespace caffe

@@ -43,7 +43,6 @@ template <typename Dtype, typename Mtype>
 void BasePrefetchingDataLayer<Dtype,Mtype>::LayerSetUp(
     const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
   BaseDataLayer<Dtype,Mtype>::LayerSetUp(bottom, top);
-
   // Before starting the prefetch thread, we make cpu_data and gpu_data
   // calls so that the prefetch thread does not accidentally make simultaneous
   // cudaMalloc calls when the main thread is running. In some GPUs this

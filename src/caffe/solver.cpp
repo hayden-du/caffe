@@ -205,10 +205,6 @@ void Solver<Dtype,Mtype>::Step(int iters) {
   vector<Mtype> losses;
   Mtype smoothed_loss(0.);
 
-  iteration_timer_.Start();
-  Timer timer;
-  ostringstream timing;
-
   while (iter_ < stop_iter) {
     // zero-init the params
     net_->ClearParamDiffs();

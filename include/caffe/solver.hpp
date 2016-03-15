@@ -5,7 +5,6 @@
 #include <vector>
 
 #include "caffe/net.hpp"
-#include "caffe/util/benchmark.hpp"
 
 namespace caffe {
 
@@ -102,12 +101,6 @@ class Solver {
   virtual void SnapshotSolverState(const string& model_filename) = 0;
   virtual void RestoreSolverStateFromHDF5(const string& state_file) = 0;
   virtual void RestoreSolverStateFromBinaryProto(const string& state_file) = 0;
-  virtual void SnapshotSolverState(SolverState* state) {
-    CHECK(false) << "Should be overriden";
-  }
-  virtual void RestoreSolverState(const SolverState& state) {
-    CHECK(false) << "Should be overriden";
-  }
   void DisplayOutputBlobs(const int net_id);
 
   SolverParameter param_;
@@ -116,9 +109,6 @@ class Solver {
   shared_ptr<Net<Dtype,Mtype> > net_;
   vector<shared_ptr<Net<Dtype,Mtype> > > test_nets_;
   vector<Callback*> callbacks_;
-
-  Timer iteration_timer_;
-  float iterations_last_;
 
   // The root solver that holds root nets (actually containing shared layers)
   // in data parallelism
@@ -190,9 +180,6 @@ class SGDSolver : public Solver<Dtype,Mtype> {
   // temp maintains other information that might be needed in computation
   //   of gradients/updates and is not needed in snapshots
   vector<shared_ptr<Blob<Dtype> > > history_, update_, temp_;
-
-  using Solver<Dtype,Mtype>::iteration_timer_;
-  using Solver<Dtype,Mtype>::iterations_last_;
 
   DISABLE_COPY_AND_ASSIGN(SGDSolver);
 };
