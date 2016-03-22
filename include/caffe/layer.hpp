@@ -224,7 +224,6 @@ public:
     return true;
   }
 
-  /**
   bool IsForwardPassed() const {
     return forward_passed_;
   }
@@ -241,9 +240,7 @@ public:
     backward_passed_ = passed;
   }
 
-  bool forward_passed_;
-  bool backward_passed_;
-
+  /**
    * @brief Given the bottom blobs, compute the top blobs and the loss.
    *
    * @param bottom
@@ -407,6 +404,9 @@ public:
  private:
   /** Whether this layer is actually shared by other nets*/
   bool is_shared_;
+
+  bool forward_passed_;
+  bool backward_passed_;
 
   /** The mutex for sequential forward if this layer is shared */
   shared_ptr<boost::mutex> forward_mutex_;

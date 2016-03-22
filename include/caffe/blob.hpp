@@ -320,10 +320,16 @@ class BlobBase {
 
   //FIXME
   template <typename Dtype>
+  const Blob<Dtype>* instance() const {
+    CHECK(dtsize() == sizeof(Dtype));
+    return reinterpret_cast<const Blob<Dtype>*>(this);
+  }
+  template <typename Dtype>
   Blob<Dtype>* instance() {
     CHECK(dtsize() == sizeof(Dtype));
     return reinterpret_cast<Blob<Dtype>*>(this);
   }
+
 
  protected:
   shared_ptr<SyncedMemory> data_;

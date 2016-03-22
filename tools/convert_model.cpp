@@ -42,8 +42,8 @@ int main(int argc, char** argv) {
   }
 
   map<std::string, shared_ptr<LayerParameter> > layerpar16map;
-  vector<shared_ptr<Blob<float> > > all32blobs;
-//  int diff_size = 0;
+//  vector<shared_ptr<Blob<float> > > all32blobs;
+  vector<Blob<float>*> all32blobs;
   {
     shared_ptr<Net<float,float> > net(new Net<float,float>(FLAGS_model, caffe::TRAIN));
     const string trained_filename(argv[1]);
@@ -60,7 +60,11 @@ int main(int argc, char** argv) {
 
       shared_ptr<LayerBase> layer = net->layer_by_name(layer_name);
       const vector<shared_ptr<BlobBase> >& blobs = layer->blobs();
-      all32blobs.insert(all32blobs.end(), blobs.begin(), blobs.end());
+//      all32blobs.insert(all32blobs.end(), blobs.begin(), blobs.end());
+      for (vector<shared_ptr<BlobBase> >::const_iterator it = blobs.begin();
+          it != blobs.end(); ++it) {
+        all32blobs.push_back((*it)->instance<float>());
+      }
 
       const LayerParameter& layer_param = layer->layer_param();
       shared_ptr<LayerParameter> layer_param16(new LayerParameter);
@@ -154,13 +158,13 @@ int main(int argc, char** argv) {
 
       std::cout << "Layer: " << layer_name << std::endl;
 
-      shared_ptr<Layer<float16,CAFFE_FP16_MTYPE> > layer = net16->layer_by_name(layer_name);
-      const vector<shared_ptr<Blob<float16> > >& blobs = layer->blobs();
+      shared_ptr<LayerBase> layer = net16->layer_by_name(layer_name);
+      const vector<shared_ptr<BlobBase> >& blobs = layer->blobs();
 
       int blobs_size = blobs.size();
       for (int j = 0; j < blobs_size; ++j) {
-        shared_ptr<Blob<float16> > blob16 = blobs[j];
-        shared_ptr<Blob<float> > blob32 = all32blobs[all32idx++];
+        Blob<float16>* blob16 = blobs[j]->instance<float16>();
+        Blob<float>* blob32 = all32blobs[all32idx++];
         int cnt16 = blob16->count();
         int cnt32 = blob32->count();
         if (cnt16 != cnt32) {
