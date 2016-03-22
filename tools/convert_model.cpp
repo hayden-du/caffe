@@ -21,6 +21,15 @@ DEFINE_string(model, "",
     "The model definition protocol buffer text file.");
 
 int main(int argc, char** argv) {
+
+#ifdef DEBUG
+  FLAGS_colorlogtostderr = 0;
+  FLAGS_stderrthreshold = 0;
+  FLAGS_alsologtostderr = 0;
+#else
+//  FLAGS_alsologtostderr = 1;
+#endif
+
   ::google::InitGoogleLogging(argv[0]);
   gflags::SetUsageMessage("Converts Caffe model file\n"
         "Usage:\n"
@@ -32,46 +41,13 @@ int main(int argc, char** argv) {
     return 1;
   }
 
-  map<std::string, shared_ptr<Blob<float16> > > blobs16map;
   map<std::string, shared_ptr<LayerParameter> > layerpar16map;
-  int diff_size = 0;
+  vector<shared_ptr<Blob<float> > > all32blobs;
+//  int diff_size = 0;
   {
-//    SolverParameter solver_param;
-//    ReadProtoFromTextFileOrDie(FLAGS_solver, &solver_param);
-//    shared_ptr<caffe::Solver<float,float> >
-//      solver(caffe::GetSolver<float,float>(solver_param));
-//    shared_ptr<Net<float,float> > net = solver->net();
-
     shared_ptr<Net<float,float> > net(new Net<float,float>(FLAGS_model, caffe::TRAIN));
     const string trained_filename(argv[1]);
     net->CopyTrainedLayersFromBinaryProto(trained_filename);
-
-    const vector<string>& blob_names = net->blob_names();
-    for (vector<string>::const_iterator it = blob_names.begin();
-        it != blob_names.end(); ++it) {
-      const std::string& blob_name = *it;
-
-      shared_ptr<BlobBase> blob = net->blob_by_name(blob_name);
-      BlobProto blob_proto, blob_proto16;
-      blob->ToProto(&blob_proto, true);
-      blob_proto16.mutable_shape()->CopyFrom(blob_proto.shape());
-
-      const int data_size = blob_proto.data_size();
-      blob_proto16.mutable_half_data()->Reserve(data_size);
-      for (int i = 0; i < data_size; ++i) {
-        blob_proto16.mutable_half_data()->Add(float16(blob_proto.data(i)).getx());
-      }
-
-      diff_size = blob_proto.diff_size();
-      blob_proto16.mutable_half_diff()->Reserve(diff_size);
-      for (int i = 0; i < diff_size; ++i) {
-        blob_proto16.mutable_half_diff()->Add(float16(blob_proto.diff(i)).getx());
-      }
-
-      shared_ptr<Blob<float16> > blob16(new Blob<float16>);
-      blob16->FromProto(blob_proto16);
-      blobs16map[blob_name] = blob16;
-    }
 
     std::cout << "Reading..." << std::endl;
 
@@ -84,6 +60,7 @@ int main(int argc, char** argv) {
 
       shared_ptr<LayerBase> layer = net->layer_by_name(layer_name);
       const vector<shared_ptr<BlobBase> >& blobs = layer->blobs();
+      all32blobs.insert(all32blobs.end(), blobs.begin(), blobs.end());
 
       const LayerParameter& layer_param = layer->layer_param();
       shared_ptr<LayerParameter> layer_param16(new LayerParameter);
@@ -110,84 +87,115 @@ int main(int argc, char** argv) {
   }
 
   {
-//    SolverParameter solver_param16;
-//    ReadProtoFromTextFileOrDie(FLAGS_solver, &solver_param16);
-//
-//    shared_ptr<caffe::Solver<float16,CAFFE_FP16_MTYPE> >
-//      solver16(caffe::GetSolver<float16,CAFFE_FP16_MTYPE>(solver_param16));
-//    shared_ptr<Net<float16,CAFFE_FP16_MTYPE> > net16 = solver16->net();
-
     shared_ptr<Net<float16,CAFFE_FP16_MTYPE> >
     net16(new Net<float16,CAFFE_FP16_MTYPE>(FLAGS_model, caffe::TRAIN));
     const string trained_filename(argv[1]);
     net16->CopyTrainedLayersFromBinaryProto(trained_filename);
 
-//  See for details:
-//  void Net<Dtype,Mtype>::ToProto(NetParameter* param, bool write_diff) const
-//
-//    const vector<string>& blob_names = net16->blob_names();
-//    for (vector<string>::const_iterator it = blob_names.begin();
-//        it != blob_names.end(); ++it) {
-//      const std::string& blob_name = *it;
-//      net16->set_blob_by_name(blob_name, blobs16map[blob_name]);
-//    }
-
     std::cout  << std::endl << "Writing..." << std::endl;
 
     NetParameter net_param16;
-    net16->ToProto(&net_param16, diff_size > 0);
+    net16->ToProto(&net_param16, true);
     net_param16.clear_layer();
 
+//    int all32idx = 0;
     const vector<string>& layer_names = net16->layer_names();
     for (vector<string>::const_iterator it = layer_names.begin();
         it != layer_names.end(); ++it) {
       const std::string& layer_name = *it;
       std::cout << "Layer: " << layer_name << std::endl;
-      net_param16.add_layer()->CopyFrom(*layerpar16map[layer_name]);
-    }
+      shared_ptr<LayerParameter> layer_param16 = layerpar16map[layer_name];
+      net_param16.add_layer()->CopyFrom(*layer_param16);
 
-//    int sz = net_param16.layer_size();
-//    for (int k = 0 ; k < sz; ++k) {
-//      const LayerParameter& lp = net_param16.layer(k);
-//        if (lp.blobs_size() > 0) {
-//          const BlobProto& b = lp.blobs(0);
-//          int i0 = b.half_data(0);
-//          int i1 = b.half_data(1);
-//          std::cout << "*** " << i0 << " " << i1 << std::endl;
+// in-place verifier:
+//      int blobs_size = layer_param16->blobs_size();
+//      for (int j = 0; j < blobs_size; ++j) {
+//        const BlobProto& blob_proto16 = layer_param16->blobs(j);
+//        Blob<float16> blob16;
+//        blob16.FromProto(blob_proto16, true);
+//        shared_ptr<Blob<float> > blob32 = all32blobs[all32idx++];
+//        int cnt16 = blob16.count();
+//        int cnt32 = blob32->count();
+//        if (cnt16 != cnt32) {
+//          LOG(FATAL) << "Layer " << layer_name << " failed verification: cnt16="
+//              << cnt16 << " vs cnt32=" << cnt32;
 //        }
-//    }
+//        const float* p32 = blob32->cpu_data();
+//        const float16* p16 = blob16.cpu_data();
+//        for (int k = 0; k < cnt16; ++k) {
+//          float v32 = p32[k];
+//          float v16 = (float)p16[k];
+//          float diff = fabs(v32 - v16) / std::max(1., fabs(v32));
+//          if (diff > 1.e-3) {
+//            LOG(WARNING) << "Layer " << layer_name << " failed verification: v16="
+//                << v16 << " vs v32=" << v32 << " for blob " << j << ", elem " << k;
+//          }
+//        }
+//      }
+    }
 
     WriteProtoToBinaryFile(net_param16, argv[2]);
   }
 
+  {
+    // Reading back the file we just created and verifying its blobs.
+    shared_ptr<Net<float16,CAFFE_FP16_MTYPE> >
+    net16(new Net<float16,CAFFE_FP16_MTYPE>(FLAGS_model, caffe::TRAIN));
+    const string converted_filename(argv[2]);
+    net16->CopyTrainedLayersFromBinaryProto(converted_filename);
 
-//  SolverParameter solver_param;
-//  ReadProtoFromTextFileOrDie(FLAGS_solver, &solver_param);
-//
-//  shared_ptr<caffe::Solver<float,float> >
-//    solver(caffe::GetSolver<float,float>(solver_param));
-//
-//  solver->Restore(argv[1]);
-//
-//  shared_ptr<Net<float,float> > net = solver->net();
-//  const vector<string>& blob_names = net->blob_names();
-//
-//  for (vector<string>::const_iterator it = blob_names.begin();
-//      it != blob_names.end(); ++it) {
-//    std::cout << *it << std::endl;
-//    shared_ptr<Blob<float> > blob = net->blob_by_name(*it);
-//    BlobProto blob_proto, hblob_proto;
-//    blob->ToProto(&blob_proto, true);
-//
-//    hblob_proto.mutable_shape()->CopyFrom(blob_proto.shape());
-//    const int data_size = blob_proto.data_size();
-//
-//    hblob_proto.mutable_half_data()->Reserve(data_size);
-//    for (int i = 0; i < data_size; ++i) {
-//      hblob_proto.mutable_half_data()->Set(i, (float16(blob_proto.data(i))).halfx());
-//    }
-//  }
+    std::cout  << std::endl << "Verifying..." << std::endl;
 
+    int all32idx = 0;
+    const vector<string>& layer_names = net16->layer_names();
+    for (vector<string>::const_iterator it = layer_names.begin();
+        it != layer_names.end(); ++it) {
+      const std::string& layer_name = *it;
+
+      std::cout << "Layer: " << layer_name << std::endl;
+
+      shared_ptr<Layer<float16,CAFFE_FP16_MTYPE> > layer = net16->layer_by_name(layer_name);
+      const vector<shared_ptr<Blob<float16> > >& blobs = layer->blobs();
+
+      int blobs_size = blobs.size();
+      for (int j = 0; j < blobs_size; ++j) {
+        shared_ptr<Blob<float16> > blob16 = blobs[j];
+        shared_ptr<Blob<float> > blob32 = all32blobs[all32idx++];
+        int cnt16 = blob16->count();
+        int cnt32 = blob32->count();
+        if (cnt16 != cnt32) {
+          LOG(FATAL) << "Layer " << layer_name << " failed verification for blob "
+              << j << ": cnt16=" << cnt16 << " vs. cnt32=" << cnt32;
+        }
+        {
+          const float* p32 = blob32->cpu_data();
+          const float16* p16 = blob16->cpu_data();
+          for (int k = 0; k < cnt16; ++k) {
+            float v32 = p32[k];
+            float v16 = (float)p16[k];
+            float diff = fabs(v32 - v16) / std::max(1., fabs(v32));
+            if (diff > 1.e-3) {
+              LOG(WARNING) << "Layer " << layer_name << " failed data verification: v16="
+                  << v16 << " vs. v32=" << v32 << " for blob " << j << ", elem " << k;
+            }
+          }
+        }
+        {
+          const float* p32 = blob32->cpu_diff();
+          const float16* p16 = blob16->cpu_diff();
+          for (int k = 0; k < cnt16; ++k) {
+            float v32 = p32[k];
+            float v16 = (float)p16[k];
+            float diff = fabs(v32 - v16) / std::max(1., fabs(v32));
+            if (diff > 1.e-3) {
+              LOG(WARNING) << "Layer " << layer_name << " failed diff verification: v16="
+                  << v16 << " vs. v32=" << v32 << " for blob " << j << ", elem " << k;
+            }
+          }
+        }
+      }
+    }
+  }
   return 0;
 }
 #endif // CPU_ONLY

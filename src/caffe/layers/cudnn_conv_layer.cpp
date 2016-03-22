@@ -117,8 +117,12 @@ void CuDNNConvolutionLayer<Dtype,Mtype>::Reshape(
     cudnn::setConvolutionDesc<Dtype>(&conv_descs_[i], bottom_descs_[i],
         filter_desc_, pad_h, pad_w, stride_h, stride_w);
 
-     // choose forward and backward algorithms + workspace(s)
-      CUDNN_CHECK(cudnnGetConvolutionForwardAlgorithm(Caffe::cudnn_handle(),
+    if (!this->IsForwardPassed() || !this->IsBackwardPassed()) {
+      continue;
+    }
+
+    // choose forward and backward algorithms + workspace(s)
+    CUDNN_CHECK(cudnnGetConvolutionForwardAlgorithm(Caffe::cudnn_handle(),
       bottom_descs_[i],
       filter_desc_,
       conv_descs_[i],

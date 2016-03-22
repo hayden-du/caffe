@@ -38,7 +38,8 @@ public:
    * layer.
    */
   explicit LayerBase(const LayerParameter& param)
-    : layer_param_(param), is_shared_(false) {
+    : layer_param_(param), is_shared_(false),
+      forward_passed_(false), backward_passed_(false) {
     InitMutex();
   }
 
@@ -224,6 +225,25 @@ public:
   }
 
   /**
+  bool IsForwardPassed() const {
+    return forward_passed_;
+  }
+
+  void ForwardPassed(bool passed) {
+    forward_passed_ = passed;
+  }
+
+  bool IsBackwardPassed() const {
+    return backward_passed_;
+  }
+
+  void BackwardPassed(bool passed) {
+    backward_passed_ = passed;
+  }
+
+  bool forward_passed_;
+  bool backward_passed_;
+
    * @brief Given the bottom blobs, compute the top blobs and the loss.
    *
    * @param bottom
@@ -496,7 +516,6 @@ class Layer: public LayerBase {
       }
     }
   }
-
  private:
 
   virtual float _loss(int top_index) const {
